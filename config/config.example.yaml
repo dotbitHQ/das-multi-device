@@ -1,0 +1,57 @@
+server:
+  is_update: false
+  net: 2 # 1 mainnet 2 testnet
+  http_server_addr: ":8125"
+  http_server_internal_addr: ":8126"
+  parser_url: "http://127.0.0.1:8118/v1" # das-database
+  server_address: ""
+  server_private_key: ""
+  pay_server_address : "ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qgr6smm36w2zm7wyjlnykrkps6kwg2zz0z6q02r0w8fegt0ecjt7vjcwcxr2eepggfutgwj4r2w"
+  multi_sign_address : "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2fnngkdjt3wxrs8p0ww36f55pn0fxqyzccftufd"
+monitor:
+  service_process_max_time:
+    das-register: 2
+    sub-account: 50
+  balance:
+    pay_server_address:
+      time_frame: 120  #单位时间（秒）
+      amount_change: 10000000000 #ckb（ckb）
+    multi_sign_address:
+      time_frame: 120 #单位时间（秒）
+      amount_change: 10000000000 #ckb（ckb）
+statistics:
+  business_success_rate: "0 49 01 * * *"
+  statistic_balance: "0 56 21 * * ?"
+origins:
+  - ""
+notify:
+  lark_monitor_key: "a5225cf9-7865-486e-917d-2284b0395e98"
+chain:
+  ckb_url: "https://testnet.ckb.dev/"
+  index_url: "https://testnet.ckb.dev/indexer"
+  current_block_number: 6900000 # mainnet 6900000, testnet2 4808730
+  confirm_num: 4
+  concurrency_num: 100
+db:
+  mysql:
+    addr: "127.0.0.1:3306" # 172.17.0.1: docker 182.17.0.1: docker-compose
+    user: "root"
+    password: "123456"
+    db_name: "das_register"
+    max_open_conn: 100
+    max_idle_conn: 50
+  parser_mysql:
+    addr: "127.0.0.1:3306" # 172.17.0.1: docker 182.17.0.1: docker-compose
+    user: "root"
+    password: "123456"
+    db_name: "das_database"
+    max_open_conn: 100
+    max_idle_conn: 50
+  mongo:
+    uri: "mongodb://admin:123456@127.0.0.1:27017/admin"
+    smt_database: "smt"
+cache:
+  redis:
+    addr: "127.0.0.1:6379" # 172.17.0.1: docker 182.17.0.1: docker-compose
+    password: ""
+    db_num: 0
