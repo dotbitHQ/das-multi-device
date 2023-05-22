@@ -33,6 +33,7 @@ func (h *HttpServer) initRouter() {
 	}
 }
 
+//11
 func respHandle(c *gin.Context, res string, err error) {
 	if err != nil {
 		log.Error("respHandle err:", err.Error())
