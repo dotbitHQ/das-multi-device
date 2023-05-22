@@ -16,5 +16,3 @@ require (
 )
 
 replace github.com/ethereum/go-ethereum v1.9.14 => github.com/ethereum/go-ethereum v1.10.17
-
-replace github.com/dotbitHQ/das-lib => ../das-lib
