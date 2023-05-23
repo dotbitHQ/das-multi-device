@@ -2,6 +2,7 @@ package dao
 
 import (
 	"das-multi-device/config"
+	"das-multi-device/tables"
 	"fmt"
 	"github.com/scorpiotzh/toolib"
 	"gorm.io/gorm"
@@ -22,7 +23,11 @@ func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, e
 	// It will change existing column’s type if its size, precision, nullable changed.
 	// It WON’T delete unused columns to protect your data.
 	if autoMigrate {
-		if err = db.AutoMigrate(); err != nil {
+		if err = db.AutoMigrate(
+			&tables.TableAuthorize{},
+			&tables.TableAuthorizeRecord{},
+			&tables.TableCidPk{},
+		); err != nil {
 			return nil, err
 		}
 	}

@@ -68,7 +68,7 @@ func runServer(ctx *cli.Context) error {
 		return fmt.Errorf("NewGormDB err: %s", err.Error())
 	}
 	log.Infof("db ok")
-
+	return nil
 	// redis
 	red, err := toolib.NewRedisClient(config.Cfg.Cache.Redis.Addr, config.Cfg.Cache.Redis.Password, config.Cfg.Cache.Redis.DbNum)
 	if err != nil {

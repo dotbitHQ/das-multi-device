@@ -21,7 +21,7 @@ db:
     addr: "127.0.0.1:3306" # 172.17.0.1: docker 182.17.0.1: docker-compose
     user: "root"
     password: "123456"
-    db_name: "das_register"
+    db_name: "multi_device"
     max_open_conn: 100
     max_idle_conn: 50
   parser_mysql:
