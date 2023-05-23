@@ -334,7 +334,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	//添加备份-交易
 	slavePayload, err := h.dasCore.Daf().AddrToWebauthnPayload(slave_addr)
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
-		Action:          common.DasActionAddDeviceToKeyList,
+		Action:          common.DasActionUpdateKeyList,
 		ChainType:       common.ChainTypeWebauthn,
 		keyListConfigOp: keyListConfigCellOutPoint,
 		MasterPayLoad:   masterPayload,
@@ -370,6 +370,18 @@ type reqBuildWebauthnTx struct {
 
 func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
 	var txParams txbuilder.BuildTransactionParams
+	contractDas, err := core.GetDasContractInfo(common.DasContractNameDispatchCellType)
+	if err != nil {
+		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+	}
+	configMain, err := core.GetDasContractInfo(common.DasContractNameConfigCellType)
+	if err != nil {
+		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+	}
+	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListConfigCellType)
+	if err != nil {
+		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+	}
 
 	// inputs account cell
 	keyListCfgOutPoint := common.String2OutPointStruct(req.keyListConfigOp)
@@ -377,7 +389,7 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 		PreviousOutput: keyListCfgOutPoint,
 	})
 
-	actionWitness, err := witness.GenActionDataWitness(common.DasActionAddDeviceToKeyList, nil)
+	actionWitness, err := witness.GenActionDataWitness(common.DasActionUpdateKeyList, nil)
 	if err != nil {
 		return nil, fmt.Errorf("GenActionDataWitness err: %s", err.Error())
 	}
@@ -393,10 +405,7 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	if err != nil {
 		return nil, fmt.Errorf("HexToArgs err: %s", err.Error())
 	}
-	contractDas, err := core.GetDasContractInfo(common.DasContractNameDispatchCellType)
-	if err != nil {
-		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
-	}
+
 	res, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
 	if err != nil {
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
@@ -408,6 +417,36 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 		Lock:     contractDas.ToScript(lockArgs),
 		Type:     nil,
 	})
+
+	//
+	res, err = h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
+	if err != nil {
+		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
+	}
+	builder, err := witness.WebAuthnKeyListDataBuilderFromTx(res.Transaction, common.DataTypeNew)
+	if err != nil {
+		return nil, fmt.Errorf("WebAuthnKeyListDataBuilderFromTx err: %s", err.Error())
+	}
+	var s witness.WebauthnKey
+	s.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
+	s.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
+	s.Cid = string(req.SlavePayload[:10])
+	s.PubKey = string(req.SlavePayload[10:])
+	klWitness, klData, err := builder.GenWitness(&witness.WebauchnKeyListCellParam{
+		Action:             common.DasActionUpdateKeyList,
+		OldIndex:           0,
+		NewIndex:           0,
+		AddWebauthnKeyList: s,
+	})
+	txParams.Witnesses = append(txParams.Witnesses, klWitness)
+	txParams.OutputsData = append(txParams.OutputsData, klData)
+
+	//cell deps
+	txParams.CellDeps = append(txParams.CellDeps,
+		contractDas.ToCellDep(),
+		configMain.ToCellDep(),
+		keyListCfgCell.ToCellDep(),
+	)
 	return &txParams, nil
 }
 
@@ -421,7 +460,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	switch req.Action {
 	case common.DasActionCreateKeyList:
 
-	case common.DasActionAddDeviceToKeyList:
+	case common.DasActionUpdateKeyList:
 
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
