@@ -392,48 +392,41 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	}
 	txParams.Witnesses = append(txParams.Witnesses, actionWitness)
 
-	ownerHex := core.DasAddressHex{
-		DasAlgorithmId: common.DasAlgorithmIdWebauthn,
-		AddressHex:     common.Bytes2Hex(req.MasterPayLoad),
-		IsMulti:        false,
-		ChainType:      common.ChainTypeWebauthn,
-	}
-	lockArgs, err := h.dasCore.Daf().HexToArgs(ownerHex, ownerHex)
-	if err != nil {
-		return nil, fmt.Errorf("HexToArgs err: %s", err.Error())
-	}
+	//ownerHex := core.DasAddressHex{
+	//	DasAlgorithmId: common.DasAlgorithmIdWebauthn,
+	//	AddressHex:     common.Bytes2Hex(req.MasterPayLoad),
+	//	IsMulti:        false,
+	//	ChainType:      common.ChainTypeWebauthn,
+	//}
+	//lockArgs, err := h.dasCore.Daf().HexToArgs(ownerHex, ownerHex)
+	//if err != nil {
+	//	return nil, fmt.Errorf("HexToArgs err: %s", err.Error())
+	//}
 
 	res, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
 	if err != nil {
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}
-	capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
+	//capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
 
-	txParams.Outputs = append(txParams.Outputs, &types.CellOutput{
-		Capacity: capacity,
-		Lock:     contractDas.ToScript(lockArgs),
-		Type:     nil,
-	})
+	txParams.Outputs = append(txParams.Outputs, res.Transaction.Outputs[0])
 
-	//
-	res, err = h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
-	if err != nil {
-		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
-	}
+	//todo 确定第二个参数
 	builder, err := witness.WebAuthnKeyListDataBuilderFromTx(res.Transaction, common.DataTypeNew)
 	if err != nil {
 		return nil, fmt.Errorf("WebAuthnKeyListDataBuilderFromTx err: %s", err.Error())
 	}
-	var s witness.WebauthnKey
-	s.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
-	s.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
-	s.Cid = string(req.SlavePayload[:10])
-	s.PubKey = string(req.SlavePayload[10:])
+	var addKeyList witness.WebauthnKey
+	addKeyList.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
+	addKeyList.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
+	addKeyList.Cid = string(req.SlavePayload[:10])
+	addKeyList.PubKey = string(req.SlavePayload[10:])
+
 	klWitness, klData, err := builder.GenWitness(&witness.WebauchnKeyListCellParam{
 		Action:             common.DasActionUpdateKeyList,
 		OldIndex:           0,
 		NewIndex:           0,
-		AddWebauthnKeyList: s,
+		AddWebauthnKeyList: addKeyList,
 	})
 	txParams.Witnesses = append(txParams.Witnesses, klWitness)
 	txParams.OutputsData = append(txParams.OutputsData, klData)
@@ -458,7 +451,11 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	case common.DasActionCreateKeyList:
 
 	case common.DasActionUpdateKeyList:
-
+		//TODO 计算手续费
+		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
+		changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
+		txBuilder.Transaction.Outputs[0].Capacity = changeCapacity
+		log.Info("buildTx:", req.Action, sizeInBlock, changeCapacity)
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
 	if err != nil {
