@@ -291,7 +291,6 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (err error) {
 	var resp RespAuthorize
 	var keyListConfigCellOutPoint string
-	//根据ckb地址获取cid
 	master_addr := req.MasterCkbAddress
 	slave_addr := req.SlaveCkbAddress
 	if master_addr == "" || slave_addr == "" {
@@ -301,9 +300,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	masterPayload, err := h.dasCore.Daf().AddrToWebauthnPayload(master_addr)
 	masterPayloadHex := common.Bytes2Hex(masterPayload)
 	cid1 := common.Bytes2Hex(masterPayload[:10])
-	fmt.Println(22222, cid1)
-	//2a022782ef1db916da06733bec8b7c4a3bf286e8
-	//检测该cid是已经开启里备份
+	//Check if cid is enabled keyListConfigCell
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
@@ -311,7 +308,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	}
 	keyListConfigCellOutPoint = res.Outpoint
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
-		//检测是否可以开通备份（是否拥有.bit资产或者有ckb余额）
+		//Check if keyListConfigCell can be created
 		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
@@ -322,7 +319,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("master_address hasn`t enable authorize")
 		}
 
-		//开启备份（创建keyListConfigCell）
+		//create keyListConfigCell
 		keyListConfigCellOutPoint, err = h.createKeyListCfgCell(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
@@ -331,7 +328,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 
 	}
 
-	//添加备份-交易
+	//update keyListConfigCell (add das-lock-key)
 	slavePayload, err := h.dasCore.Daf().AddrToWebauthnPayload(slave_addr)
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
 		Action:          common.DasActionUpdateKeyList,
@@ -491,7 +488,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 }
 
 func (h *HttpHandle) checkCanBeCreated(payload string) (canCreate bool, err error) {
-	//是否拥有.bit账号
+	//check if u have .bit account
 	num, err := h.dbDao.GetAccountInfos(payload)
 	if err != nil {
 		return false, fmt.Errorf("GetAccountInfos err: %s", err.Error())
@@ -500,7 +497,7 @@ func (h *HttpHandle) checkCanBeCreated(payload string) (canCreate bool, err erro
 		return true, nil
 	}
 
-	//是否有ckb资产
+	//check if you have ckb amount
 	dasLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
 		DasAlgorithmId: common.DasAlgorithmIdWebauthn,
 		AddressHex:     payload,
