@@ -392,17 +392,6 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	}
 	txParams.Witnesses = append(txParams.Witnesses, actionWitness)
 
-	//ownerHex := core.DasAddressHex{
-	//	DasAlgorithmId: common.DasAlgorithmIdWebauthn,
-	//	AddressHex:     common.Bytes2Hex(req.MasterPayLoad),
-	//	IsMulti:        false,
-	//	ChainType:      common.ChainTypeWebauthn,
-	//}
-	//lockArgs, err := h.dasCore.Daf().HexToArgs(ownerHex, ownerHex)
-	//if err != nil {
-	//	return nil, fmt.Errorf("HexToArgs err: %s", err.Error())
-	//}
-
 	res, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
 	if err != nil {
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
