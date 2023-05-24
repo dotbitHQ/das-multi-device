@@ -85,12 +85,12 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "AuthenticatorData  error")
-			return fmt.Errorf("AuthenticatorData is error : ", signData[i].AuthenticatorData)
+			return fmt.Errorf("AuthenticatorData is error : %s", signData[i].AuthenticatorData)
 		}
 		clientDataJson, err := hex.DecodeString(signData[i].ClientDataJson)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "ClientDataJson  error")
-			return fmt.Errorf("ClientDataJson is error : ", signData[i].ClientDataJson)
+			return fmt.Errorf("ClientDataJson is error : %s", signData[i].ClientDataJson)
 		}
 		clientDataJsonHash := sha256.Sum256(clientDataJson)
 		msg := append(authenticatorData, clientDataJsonHash[:]...)
@@ -103,7 +103,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 		signature, err := hex.DecodeString(signData[i].Signature)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Signature  error")
-			return fmt.Errorf("Signature is error : ", signData[i].Signature)
+			return fmt.Errorf("signature is error : %s", signData[i].Signature)
 		}
 
 		e := &ECDSASignature{}
@@ -587,7 +587,6 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 	webAuthnBuilder := witness.WebAuthnKeyListDataBuilder{}
 	webAuthnBuilder.WebAuthnKeyListData = &deviceKeyList
 	webAuthnBuilder.Version = common.GoDataEntityVersion3
-	webAuthnBuilder.Index = 0
 
 	klWitness, klData, err := webAuthnBuilder.GenWitness(&witness.WebauchnKeyListCellParam{
 		Action: common.DasActionUpdateKeyList,
