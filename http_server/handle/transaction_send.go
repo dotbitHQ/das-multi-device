@@ -129,7 +129,8 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 
 		idx := -1
 		for i := 0; i < int(keyList.Len()); i++ {
-			if bytes.Equal(keyList.Get(uint(i)).Pubkey().RawData(), common.Hex2Bytes(sic.Address)[10:]) {
+			pk1 := keyList.Get(uint(i)).Pubkey().RawData()
+			if bytes.Equal(pk1, common.Hex2Bytes(sic.Address)[10:]) {
 				idx = i
 				break
 			}
