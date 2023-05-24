@@ -143,7 +143,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
 			}
-			req.SignList[idx].SignMsg += fmt.Sprintf("%02d", idx)
+			req.SignList[idx].SignMsg += fmt.Sprintf("%02x", idx)
 		}
 	}
 
