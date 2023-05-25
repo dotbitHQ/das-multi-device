@@ -1,16 +1,23 @@
 package handle
 
 import (
+	"bytes"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/txbuilder"
+	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+
 	"github.com/jinzhu/gorm"
+
+	"github.com/nervosnetwork/ckb-sdk-go/indexer"
+
 	"github.com/scorpiotzh/toolib"
 	"net/http"
 	"strings"
@@ -88,6 +95,69 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "json.Unmarshal err")
 		return fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
+
+	hasWebAuthn := false
+	for _, v := range req.SignList {
+		if v.SignType == common.DasAlgorithmIdWebauthn {
+			hasWebAuthn = true
+			break
+		}
+	}
+	if hasWebAuthn {
+		webAuthnLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
+			DasAlgorithmId: common.DasAlgorithmIdWebauthn,
+			ChainType:      common.ChainTypeWebauthn,
+			AddressHex:     sic.Address,
+		})
+		keyListConfigCellContract, err := core.GetDasContractInfo(common.DasKeyListCellType)
+		if err != nil {
+			return fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+		}
+		searchKey := &indexer.SearchKey{
+			Script:     webAuthnLockScript,
+			ScriptType: indexer.ScriptTypeLock,
+			Filter: &indexer.CellsFilter{
+				Script: keyListConfigCellContract.ToScript(webAuthnLockScript.Args),
+			},
+		}
+		res, err := h.dasCore.Client().GetCells(h.ctx, searchKey, indexer.SearchOrderDesc, 1, "")
+		if err != nil {
+			return fmt.Errorf("GetCells err: %s", err.Error())
+		}
+		if len(res.Objects) == 0 {
+			return fmt.Errorf("can't find GetCells type: %s", common.DasKeyListCellType)
+		}
+		keyListConfigTx, err := h.dasCore.Client().GetTransaction(h.ctx, res.Objects[0].OutPoint.TxHash)
+		if err != nil {
+			return err
+		}
+		webAuthnKeyListConfigBuilder, err := witness.WebAuthnKeyListDataBuilderFromTx(keyListConfigTx.Transaction, common.DataTypeNew)
+		if err != nil {
+			return err
+		}
+		dataBuilder := webAuthnKeyListConfigBuilder.WebAuthnKeyListData.AsBuilder()
+		keyList := dataBuilder.Build()
+
+		idx := -1
+		for i := 0; i < int(keyList.Len()); i++ {
+			pk1 := keyList.Get(uint(i)).Pubkey().RawData()
+			if bytes.Equal(pk1, common.Hex2Bytes(sic.Address)[10:]) {
+				idx = i
+				break
+			}
+		}
+		if idx == -1 {
+			return errors.New("the current signing device is not in the authorized list")
+		}
+
+		for idx, v := range req.SignList {
+			if v.SignType != common.DasAlgorithmIdWebauthn {
+				continue
+			}
+			req.SignList[idx].SignMsg += fmt.Sprintf("%02x", idx)
+		}
+	}
+
 	// sign
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, sic.BuilderTx)
 	if err := txBuilder.AddSignatureForTx(req.SignList); err != nil {
