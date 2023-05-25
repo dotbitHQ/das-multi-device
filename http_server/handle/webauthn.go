@@ -376,7 +376,7 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}
-	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListConfigCellType)
+	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListCellType)
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}
@@ -438,8 +438,6 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 
 	var skipGroups []int
 	switch req.Action {
-	case common.DasActionCreateKeyList:
-
 	case common.DasActionUpdateKeyList:
 		//TODO 计算手续费
 		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
@@ -553,7 +551,7 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}
-	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListConfigCellType)
+	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListCellType)
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}

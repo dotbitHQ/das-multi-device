@@ -66,42 +66,13 @@ type CfgServer struct {
 		RemoteSignApiUrl       string            `json:"remote_sign_api_url" yaml:"remote_sign_api_url"`
 		PushLogUrl             string            `json:"push_log_url" yaml:"push_log_url"`
 		PushLogIndex           string            `json:"push_log_index" yaml:"push_log_index"`
+		NotExit                bool              `json:"not_exit" yaml:"not_exit"`
 	} `json:"server" yaml:"server"`
 
-	AccountCheck struct {
-		CroSpec             string `json:"spec" yaml:"spec"`
-		Limit               int    `json:"limit" yaml:"limit"`
-		CompareCount        int    `json:"compare_count" yaml:"compare_count"`
-		THQCodeHash         string `json:"thq_code_hash" yaml:"thq_code_hash"`
-		DasContractArgs     string `json:"das_contract_args" yaml:"das_contract_args"`
-		DasContractCodeHash string `json:"das_contract_code_hash" yaml:"das_contract_code_hash"`
-		AccountCellType     string `json:"account-cell-type" yaml:"account-cell-type"`
-	} `json:"account_check" yaml:"account_check"`
-	BusinessProcess struct {
-		BusinessSuccessRate string `json:"business_success_rate" yaml:"business_success_rate"`
-		TimeLimit           struct {
-			DasRegister int `json:"das_register" yaml:"das_register"`
-			SubAccount  int `json:"sub_account" yaml:"sub_account"`
-		} `json:"time_limit" yaml:"time_limit"`
-	} `json:"business_process" yaml:"business_process"`
-	BalanceChange struct {
-		StatisticBalance string `json:"statistic_balance" yaml:"statistic_balance"`
-		AddressList      struct {
-			PayServerAddress struct {
-				Address      string `json:"address" yaml:"address"`
-				TimeFrame    int    `json:"time_frame" yaml:"time_frame"`
-				AmountChange uint64 `json:"amount_change" yaml:"amount_change"`
-			} `json:"pay_server_address" yaml:"pay_server_address"`
-			ContractAddress struct {
-				Address      string `json:"address" yaml:"address"`
-				TimeFrame    int    `json:"time_frame" yaml:"time_frame"`
-				AmountChange uint64 `json:"amount_change" yaml:"amount_change"`
-			} `json:"contract_address" yaml:"contract_address"`
-		} `json:"address_list" yaml:"address_list"`
-	} `json:"balance_change" yaml:"balance_change"`
 	Origins []string `json:"origins" yaml:"origins"`
 	Notify  struct {
-		LarkMonitorKey string `json:"lark_monitor_key" yaml:"lark_monitor_key"`
+		LarkErrorKey   string `json:"lark_error_key" yaml:"lark_error_key"`
+		DiscordWebhook string `json:"discord_webhook" yaml:"discord_webhook"`
 	} `json:"notify" yaml:"notify"`
 	Chain struct {
 		CkbUrl             string `json:"ckb_url" yaml:"ckb_url"`
