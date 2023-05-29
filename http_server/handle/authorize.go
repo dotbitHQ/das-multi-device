@@ -1,15 +1,10 @@
 package handle
 
 import (
-	"crypto/ecdsa"
-	"crypto/sha256"
 	"das-multi-device/cache"
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
-	"das-multi-device/tool"
-	"encoding/asn1"
-	"encoding/hex"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
@@ -17,161 +12,15 @@ import (
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
-	"github.com/nervosnetwork/ckb-sdk-go/address"
 	"github.com/nervosnetwork/ckb-sdk-go/indexer"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
 	"github.com/scorpiotzh/toolib"
-	"math/big"
 	"net/http"
 	"time"
 )
 
-type WebauthnSignData struct {
-	AuthenticatorData string `json:"authenticatorData"`
-	ClientDataJson    string `json:"clientDataJson"`
-	Signature         string `json:"signature"`
-}
-type ReqEcrecover struct {
-	Cid      string              `json:"cid"`
-	SignData []*WebauthnSignData `json:"sign_data"`
-}
-type RespEcrecover struct {
-	CkbAddress string `json:"ckb_address"`
-}
-
 type RespReportBusinessProcess struct {
 	ProcessId string `json:"process_id"`
-}
-
-func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
-	var (
-		funcName = "ReportBusinessProcess"
-		clientIp = GetClientIp(ctx)
-		req      *ReqEcrecover
-		apiResp  api_code.ApiResp
-		err      error
-	)
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
-		ctx.JSON(http.StatusOK, apiResp)
-		return
-	}
-
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
-
-	if err = h.doEcrecover(req, &apiResp); err != nil {
-		log.Error("doReportBusinessProcess err:", err.Error(), funcName, clientIp)
-	}
-
-	ctx.JSON(http.StatusOK, apiResp)
-}
-
-func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (err error) {
-	var resp RespEcrecover
-	if req.Cid == "" {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Cid is empty")
-		return
-	}
-	signData := req.SignData
-	if len(signData) < 2 {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Webauthn sign data must exceed 2")
-		return
-	}
-
-	var pubKeys []*ecdsa.PublicKey
-	for i := 0; i < 2; i++ {
-		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "AuthenticatorData  error")
-			return fmt.Errorf("AuthenticatorData is error : %s", signData[i].AuthenticatorData)
-		}
-		clientDataJson, err := hex.DecodeString(signData[i].ClientDataJson)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "ClientDataJson  error")
-			return fmt.Errorf("ClientDataJson is error : %s", signData[i].ClientDataJson)
-		}
-		clientDataJsonHash := sha256.Sum256(clientDataJson)
-		msg := append(authenticatorData, clientDataJsonHash[:]...)
-		hash := sha256.Sum256(msg)
-		//signature
-		type ECDSASignature struct {
-			R, S *big.Int
-		}
-
-		signature, err := hex.DecodeString(signData[i].Signature)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Signature  error")
-			return fmt.Errorf("signature is error : %s", signData[i].Signature)
-		}
-
-		e := &ECDSASignature{}
-
-		_, err = asn1.Unmarshal(signature, e)
-		if err != nil {
-			fmt.Println("Error asn1 unmarshal signature ", err)
-		}
-		possiblePubkey, err := tool.GetPubKey(hash[:], e.R, e.S)
-		pubKeys = append(pubKeys, possiblePubkey[:]...)
-	}
-	fmt.Println("all pubkeys: ", pubKeys)
-	var realPubkey *ecdsa.PublicKey
-	for i := 0; i < 2; i++ {
-		if pubKeys[i].Equal(pubKeys[2]) || pubKeys[i].Equal(pubKeys[3]) {
-			realPubkey = pubKeys[i]
-		}
-	}
-	if realPubkey == nil {
-		return fmt.Errorf("recover faild")
-	}
-	fmt.Println("realpubkeys: ", realPubkey)
-
-	//计算ckb地址
-	//计算webauthn payload
-
-	webauthnPayload := common.GetWebauthnPayload(req.Cid, realPubkey)
-	fmt.Println("webauthnPayload ", webauthnPayload)
-	addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-		ChainType:     common.ChainTypeWebauthn,
-		AddressNormal: webauthnPayload,
-		Is712:         true,
-	})
-	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "HexToArgs err")
-		return fmt.Errorf("NormalToHex err: %s", err.Error())
-	}
-
-	lockScript, _, err := h.dasCore.Daf().HexToScript(addressHex)
-	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-		return fmt.Errorf("HexToScript err: %s", err.Error())
-	}
-
-	if config.Cfg.Server.Net == common.DasNetTypeMainNet {
-		addr, err := address.ConvertScriptToAddress(address.Mainnet, lockScript)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-		}
-		resp.CkbAddress = addr
-	} else {
-		addr, err := address.ConvertScriptToAddress(address.Testnet, lockScript)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-		}
-		resp.CkbAddress = addr
-	}
-	apiResp.ApiRespOK(resp)
-	return nil
-}
-
-type ReqGetMasters struct {
-	Cid string `json:"cid"`
-}
-type RespGetMasters struct {
-	CkbAddress []string `json:ckb_address`
 }
 
 type ReqAuthorize struct {
@@ -182,92 +31,18 @@ type RespAuthorize struct {
 	SignInfo
 }
 
-func (h *HttpHandle) GetMasters(ctx *gin.Context) {
-	var (
-		funcName = "ReportBusinessProcess"
-		clientIp = GetClientIp(ctx)
-		req      *ReqGetMasters
-		apiResp  api_code.ApiResp
-		err      error
-	)
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
-		ctx.JSON(http.StatusOK, apiResp)
-		return
-	}
-
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
-
-	if err = h.doGetMasters(req, &apiResp); err != nil {
-		log.Error("doReportBusinessProcess err:", err.Error(), funcName, clientIp)
-	}
-
-	ctx.JSON(http.StatusOK, apiResp)
-}
-
-func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
-	var resp RespGetMasters
-	cid := req.Cid
-	if cid == "" {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Cid is empty")
-		return
-	}
-	cid1 := common.CaculateCid1(cid)
-	authorizes, err := h.dbDao.GetMasters(hex.EncodeToString(cid1))
-	var ckbAddress []string
-	for _, v := range authorizes {
-		masterCidBytes, err := hex.DecodeString(v.MasterCid)
-		if err != nil {
-			return err
-		}
-		masterPkBytes, err := hex.DecodeString(v.MasterPk)
-		if err != nil {
-			return err
-		}
-		payload := common.CaculateWebauthnPayload(masterCidBytes, masterPkBytes)
-		addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-			ChainType:     common.ChainTypeWebauthn,
-			AddressNormal: payload,
-			Is712:         true,
-		})
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "HexToArgs err")
-			return fmt.Errorf("NormalToHex err: %s", err.Error())
-		}
-
-		lockScript, _, err := h.dasCore.Daf().HexToScript(addressHex)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("HexToScript err: %s", err.Error())
-		}
-
-		if config.Cfg.Server.Net == common.DasNetTypeMainNet {
-			addr, err := address.ConvertScriptToAddress(address.Mainnet, lockScript)
-			if err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-				return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-			}
-
-			ckbAddress = append(ckbAddress, addr)
-		} else {
-			addr, err := address.ConvertScriptToAddress(address.Testnet, lockScript)
-			if err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-				return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-			}
-			ckbAddress = append(ckbAddress, addr)
-		}
-	}
-	resp.CkbAddress = ckbAddress
-	apiResp.ApiRespOK(resp)
-	return nil
+type reqBuildWebauthnTx struct {
+	Action          common.DasAction
+	ChainType       common.ChainType
+	keyListConfigOp string
+	MasterPayLoad   []byte
+	SlavePayload    []byte
+	Capacity        uint64 `json:"capacity"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
 	var (
-		funcName = "SubAccountInit"
+		funcName = "Authorize"
 		clientIp = GetClientIp(ctx)
 		req      ReqAuthorize
 		apiResp  api_code.ApiResp
@@ -317,7 +92,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
 		}
 		if !canCreate {
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address can`t enable authorize")
+			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
 			return fmt.Errorf("master_address hasn`t enable authorize")
 		}
 
@@ -351,7 +126,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	txParams, err := h.buildAddAuthorizeTx(&reqBuildWebauthnTx)
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "build tx err: "+err.Error())
-		return fmt.Errorf("buildEditManagerTx err: %s", err.Error())
+		return fmt.Errorf("buildAddAuthorizeTx err: %s", err.Error())
 	}
 	if si, err := h.buildWebauthnTx(&reqBuildWebauthnTx, txParams); err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "buildWebauthnTx tx err: "+err.Error())
@@ -363,15 +138,6 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	apiResp.ApiRespOK(resp)
 	return nil
 
-}
-
-type reqBuildWebauthnTx struct {
-	Action          common.DasAction
-	ChainType       common.ChainType
-	keyListConfigOp string
-	MasterPayLoad   []byte
-	SlavePayload    []byte
-	Capacity        uint64 `json:"capacity"`
 }
 
 func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
@@ -514,7 +280,7 @@ func (h *HttpHandle) checkCanBeCreated(payload string) (canCreate bool, err erro
 	return dasLockAmount > 0, nil
 }
 
-// 创建 keyListConfigCell
+//create keyListConfigCell
 func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err error) {
 	delFunc, err := h.rc.LockWithRedis(common.ChainTypeWebauthn, payload, cache.CreateKeyListConfigCell, time.Minute*4)
 	if err != nil {

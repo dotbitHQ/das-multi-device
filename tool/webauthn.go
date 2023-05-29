@@ -58,8 +58,6 @@ func GetPubKey(hash []byte, R, S *big.Int) ([2]*ecdsa.PublicKey, error) {
 		recoverPubKey.Curve = curve
 		recoverPubKey.X = Qa.X
 		recoverPubKey.Y = Qa.Y
-		fmt.Println("possible x: ", Qa.X)
-		fmt.Println("possible y: ", Qa.Y)
 		//isValid := ecdsa.Verify(recoverPubKey, hash[:], R, S)
 		//fmt.Println(isValid)
 		possiblePubkey[j] = recoverPubKey

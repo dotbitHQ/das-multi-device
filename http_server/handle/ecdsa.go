@@ -1,0 +1,145 @@
+package handle
+
+import (
+	"crypto/ecdsa"
+	"crypto/sha256"
+	"das-multi-device/config"
+	"das-multi-device/http_server/api_code"
+	"das-multi-device/tool"
+	"encoding/asn1"
+	"encoding/hex"
+	"fmt"
+	"github.com/dotbitHQ/das-lib/common"
+	"github.com/dotbitHQ/das-lib/core"
+	"github.com/gin-gonic/gin"
+	"github.com/nervosnetwork/ckb-sdk-go/address"
+	"github.com/scorpiotzh/toolib"
+	"math/big"
+	"net/http"
+)
+
+type WebauthnSignData struct {
+	AuthenticatorData string `json:"authenticatorData"`
+	ClientDataJson    string `json:"clientDataJson"`
+	Signature         string `json:"signature"`
+}
+
+type ReqEcrecover struct {
+	Cid      string              `json:"cid" binding:"required"`
+	SignData []*WebauthnSignData `json:"sign_data" binding:"required"`
+}
+type RespEcrecover struct {
+	CkbAddress string `json:"ckb_address"`
+}
+
+func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
+	var (
+		funcName = "ReportBusinessProcess"
+		clientIp = GetClientIp(ctx)
+		req      *ReqEcrecover
+		apiResp  api_code.ApiResp
+		err      error
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		ctx.JSON(http.StatusOK, apiResp)
+		return
+	}
+
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+
+	if err = h.doEcrecover(req, &apiResp); err != nil {
+		log.Error("doEcrecover err:", err.Error(), funcName, clientIp)
+	}
+
+	ctx.JSON(http.StatusOK, apiResp)
+}
+
+func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (err error) {
+	var resp RespEcrecover
+	signData := req.SignData
+	if len(signData) < 2 {
+		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Webauthn sign data must exceed 2")
+		return
+	}
+
+	var pubKeys []*ecdsa.PublicKey
+	for i := 0; i < 2; i++ {
+		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "AuthenticatorData  error")
+			return fmt.Errorf("AuthenticatorData is error : %s", signData[i].AuthenticatorData)
+		}
+		clientDataJson, err := hex.DecodeString(signData[i].ClientDataJson)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "ClientDataJson  error")
+			return fmt.Errorf("ClientDataJson is error : %s", signData[i].ClientDataJson)
+		}
+		clientDataJsonHash := sha256.Sum256(clientDataJson)
+		msg := append(authenticatorData, clientDataJsonHash[:]...)
+		hash := sha256.Sum256(msg)
+		//signature
+		type ECDSASignature struct {
+			R, S *big.Int
+		}
+
+		signature, err := hex.DecodeString(signData[i].Signature)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Signature  error")
+			return fmt.Errorf("signature is error : %s", signData[i].Signature)
+		}
+
+		e := &ECDSASignature{}
+
+		_, err = asn1.Unmarshal(signature, e)
+		if err != nil {
+			return fmt.Errorf("Error asn1 unmarshal signature %s:", err)
+		}
+		possiblePubkey, err := tool.GetPubKey(hash[:], e.R, e.S)
+		pubKeys = append(pubKeys, possiblePubkey[:]...)
+	}
+
+	var realPubkey *ecdsa.PublicKey
+	for i := 0; i < 2; i++ {
+		if pubKeys[i].Equal(pubKeys[2]) || pubKeys[i].Equal(pubKeys[3]) {
+			realPubkey = pubKeys[i]
+		}
+	}
+	if realPubkey == nil {
+		return fmt.Errorf("recover faild")
+	}
+
+	webauthnPayload := common.GetWebauthnPayload(req.Cid, realPubkey)
+	addressHex := core.DasAddressHex{
+		DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
+		DasSubAlgorithmId: common.DasWebauthnSubAlgorithmIdES256,
+		AddressHex:        webauthnPayload,
+		AddressPayload:    common.Hex2Bytes(webauthnPayload),
+		ChainType:         common.ChainTypeWebauthn,
+	}
+	lockScript, _, err := h.dasCore.Daf().HexToScript(addressHex)
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		return fmt.Errorf("HexToScript err: %s", err.Error())
+	}
+
+	if config.Cfg.Server.Net == common.DasNetTypeMainNet {
+		addr, err := address.ConvertScriptToAddress(address.Mainnet, lockScript)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
+		}
+		resp.CkbAddress = addr
+	} else {
+		addr, err := address.ConvertScriptToAddress(address.Testnet, lockScript)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
+		}
+		resp.CkbAddress = addr
+	}
+	apiResp.ApiRespOK(resp)
+	return nil
+}
