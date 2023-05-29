@@ -19,14 +19,11 @@ import (
 	"time"
 )
 
-type RespReportBusinessProcess struct {
-	ProcessId string `json:"process_id"`
-}
-
 type ReqAuthorize struct {
 	MasterCkbAddress string `json:"master_ckb_address" binding:"required"`
 	SlaveCkbAddress  string `json:"slave_ckb_address" binding:"required"`
 }
+
 type RespAuthorize struct {
 	SignInfo
 }
