@@ -179,7 +179,7 @@ type ReqAuthorize struct {
 	SlaveCkbAddress  string `json:"slave_ckb_address" binding:"required"`
 }
 type RespAuthorize struct {
-	txbuilder.SignInfo
+	SignInfo
 }
 
 func (h *HttpHandle) GetMasters(ctx *gin.Context) {
@@ -438,7 +438,7 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	return &txParams, nil
 }
 
-func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*txbuilder.SignInfo, error) {
+func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*SignInfo, error) {
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, nil)
 	if err := txBuilder.BuildTransaction(txParams); err != nil {
 		return nil, fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
@@ -460,7 +460,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 
 	log.Info("buildTx:", txBuilder.TxString())
 
-	var sic txbuilder.SignInfoCache
+	var sic SignInfoCache
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
 	sic.Address = common.Bytes2Hex(req.MasterPayLoad)
@@ -473,7 +473,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 		return nil, fmt.Errorf("SetSignTxCache err: %s", err.Error())
 	}
 
-	var si txbuilder.SignInfo
+	var si SignInfo
 	si.SignKey = signKey
 	si.SignList = signList
 

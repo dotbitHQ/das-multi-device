@@ -3,7 +3,7 @@ module das-multi-device
 go 1.16
 
 require (
-	github.com/dotbitHQ/das-lib v1.0.2-0.20230529130555-e379fee6e862
+	github.com/dotbitHQ/das-lib v1.0.2-0.20230529132305-785c4ad8e89d
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-redis/redis v6.15.9+incompatible
