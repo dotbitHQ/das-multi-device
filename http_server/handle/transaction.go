@@ -2,6 +2,7 @@ package handle
 
 import (
 	"bytes"
+	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
 	"encoding/json"
@@ -13,7 +14,6 @@ import (
 	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-
 	"github.com/jinzhu/gorm"
 
 	"github.com/nervosnetwork/ckb-sdk-go/indexer"
@@ -25,7 +25,7 @@ import (
 )
 
 type ReqTransactionSend struct {
-	SignInfo
+	txbuilder.SignInfo
 }
 
 type RespTransactionSend struct {
@@ -138,23 +138,39 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		dataBuilder := webAuthnKeyListConfigBuilder.WebAuthnKeyListData.AsBuilder()
 		keyList := dataBuilder.Build()
 
-		idx := -1
-		for i := 0; i < int(keyList.Len()); i++ {
-			pk1 := keyList.Get(uint(i)).Pubkey().RawData()
-			if bytes.Equal(pk1, common.Hex2Bytes(sic.Address)[10:]) {
-				idx = i
-				break
-			}
+		addressFormat := core.DasAddressFormat{
+			DasNetType: config.Cfg.Server.Net,
 		}
-		if idx == -1 {
-			return errors.New("the current signing device is not in the authorized list")
-		}
+		dasAddressHex, err := addressFormat.NormalToHex(core.DasAddressNormal{
+			ChainType:     common.ChainTypeWebauthn,
+			AddressNormal: req.SignAddress,
+		})
 
-		for idx, v := range req.SignList {
+		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
 			}
-			req.SignList[idx].SignMsg += fmt.Sprintf("%02x", idx)
+
+			idx := -1
+			for i := 0; i < int(keyList.Len()); i++ {
+				mainAlgId := keyList.Get(uint(i)).MainAlgId().RawData()
+				subAlgId := keyList.Get(uint(i)).SubAlgId().RawData()
+				cid1 := keyList.Get(uint(i)).Cid().RawData()
+				pk1 := keyList.Get(uint(i)).Pubkey().RawData()
+				buf := bytes.NewBuffer(mainAlgId)
+				buf.Write(subAlgId)
+				buf.Write(cid1)
+				buf.Write(pk1)
+				buf.Write(buf.Bytes())
+				if common.Bytes2Hex(buf.Bytes()) == dasAddressHex.AddressHex {
+					idx = i
+					break
+				}
+			}
+			if idx == -1 {
+				return errors.New("the current signing device is not in the authorized list")
+			}
+			req.SignList[i].SignMsg += fmt.Sprintf("%02x", idx)
 		}
 	}
 
