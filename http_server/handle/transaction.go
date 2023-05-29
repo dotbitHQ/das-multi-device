@@ -82,7 +82,7 @@ func (h *HttpHandle) TransactionSend(ctx *gin.Context) {
 func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_code.ApiResp) error {
 	var resp RespTransactionSend
 
-	var sic SignInfoCache
+	var sic txbuilder.SignInfoCache
 	// get tx by cache
 	if txStr, err := h.rc.GetSignTxCache(req.SignKey); err != nil {
 		if err == redis.Nil {
