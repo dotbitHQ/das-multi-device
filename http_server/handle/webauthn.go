@@ -292,15 +292,22 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (err error) {
 	var resp RespAuthorize
 	var keyListConfigCellOutPoint string
-	master_addr := req.MasterCkbAddress
-	slave_addr := req.SlaveCkbAddress
-	if master_addr == "" || slave_addr == "" {
+	masterAddr := req.MasterCkbAddress
+	slaveAddr := req.SlaveCkbAddress
+	if masterAddr == "" || slaveAddr == "" {
 		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "master_address or slave_address is empty")
 		return
 	}
-	masterPayload, err := h.dasCore.Daf().AddrToWebauthnPayload(master_addr)
-	masterPayloadHex := common.Bytes2Hex(masterPayload)
-	cid1 := common.Bytes2Hex(masterPayload[:10])
+	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+		ChainType:     common.ChainTypeWebauthn,
+		AddressNormal: masterAddr,
+	})
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		return err
+	}
+	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
+	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
@@ -330,13 +337,20 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	}
 
 	//update keyListConfigCell (add das-lock-key)
-	slavePayload, err := h.dasCore.Daf().AddrToWebauthnPayload(slave_addr)
+	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+		ChainType:     common.ChainTypeWebauthn,
+		AddressNormal: masterAddr,
+	})
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		return err
+	}
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
 		Action:          common.DasActionUpdateKeyList,
 		ChainType:       common.ChainTypeWebauthn,
 		keyListConfigOp: keyListConfigCellOutPoint,
-		MasterPayLoad:   masterPayload,
-		SlavePayload:    slavePayload,
+		MasterPayLoad:   masterAddressHex.AddressPayload,
+		SlavePayload:    slaveAddressHex.AddressPayload,
 		Capacity:        0,
 	}
 
