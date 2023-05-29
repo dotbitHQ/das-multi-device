@@ -175,11 +175,11 @@ type RespGetMasters struct {
 }
 
 type ReqAuthorize struct {
-	MasterCkbAddress string `json:"master_ckb_address"`
-	SlaveCkbAddress  string `json:"slave_ckb_address"`
+	MasterCkbAddress string `json:"master_ckb_address" binding:"required"`
+	SlaveCkbAddress  string `json:"slave_ckb_address" binding:"required"`
 }
 type RespAuthorize struct {
-	SignInfo
+	txbuilder.SignInfo
 }
 
 func (h *HttpHandle) GetMasters(ctx *gin.Context) {
@@ -292,15 +292,9 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (err error) {
 	var resp RespAuthorize
 	var keyListConfigCellOutPoint string
-	masterAddr := req.MasterCkbAddress
-	slaveAddr := req.SlaveCkbAddress
-	if masterAddr == "" || slaveAddr == "" {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "master_address or slave_address is empty")
-		return
-	}
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
-		AddressNormal: masterAddr,
+		AddressNormal: req.MasterCkbAddress,
 	})
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
@@ -339,7 +333,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	//update keyListConfigCell (add das-lock-key)
 	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
-		AddressNormal: masterAddr,
+		AddressNormal: req.SlaveCkbAddress,
 	})
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
@@ -444,7 +438,7 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 	return &txParams, nil
 }
 
-func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*SignInfo, error) {
+func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*txbuilder.SignInfo, error) {
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, nil)
 	if err := txBuilder.BuildTransaction(txParams); err != nil {
 		return nil, fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
@@ -466,7 +460,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 
 	log.Info("buildTx:", txBuilder.TxString())
 
-	var sic SignInfoCache
+	var sic txbuilder.SignInfoCache
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
 	sic.Address = common.Bytes2Hex(req.MasterPayLoad)
@@ -479,7 +473,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 		return nil, fmt.Errorf("SetSignTxCache err: %s", err.Error())
 	}
 
-	var si SignInfo
+	var si txbuilder.SignInfo
 	si.SignKey = signKey
 	si.SignList = signList
 
