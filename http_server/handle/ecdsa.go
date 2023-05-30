@@ -2,10 +2,10 @@ package handle
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/sha256"
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
-	"das-multi-device/tool"
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
@@ -66,6 +66,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 	}
 
 	var pubKeys []*ecdsa.PublicKey
+	curve := elliptic.P256()
 	for i := 0; i < 2; i++ {
 		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
 		if err != nil {
@@ -97,7 +98,8 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 		if err != nil {
 			return fmt.Errorf("Error asn1 unmarshal signature %s:", err)
 		}
-		possiblePubkey, err := tool.GetPubKey(hash[:], e.R, e.S)
+
+		possiblePubkey, err := common.GetEcdsaPossiblePubkey(curve, hash[:], e.R, e.S)
 		pubKeys = append(pubKeys, possiblePubkey[:]...)
 	}
 
@@ -110,7 +112,6 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 	if realPubkey == nil {
 		return fmt.Errorf("recover faild")
 	}
-
 	webauthnPayload := common.GetWebauthnPayload(req.Cid, realPubkey)
 	addressHex := core.DasAddressHex{
 		DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
