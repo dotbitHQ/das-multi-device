@@ -3,6 +3,7 @@
     * [Get Master Addr](#get-masters-addr)
     * [Authorize](#authorize)
     * [Transaction Send](#transaction-send)
+    * [Transaction Status](#transaction-status)
 ## API LIST
 ### Ecdsa Ecrecover
 
@@ -112,13 +113,16 @@
 
 * path: /transaction/send
 * param:
-
+  * sign_type:签名类型，webauthn是8
+  * sign_address:签名的ckb地址
+  * sign_msg:签名
 ```json
 {
   "sign_key": "",
   "sign_list": [
     {
       "sign_type": 8,
+      "sign_address": "ckt1qyqxgwjt9gn7vgk2rnny5lf33dtak4nexkasjsje75",
       "sign_msg": ""
     }
   ]
@@ -134,5 +138,48 @@
   "data": {
     "hash": ""
   }
+}
+```
+
+#### Transaction Status
+
+**Request**
+
+* path: /transaction/status
+* param:
+  * actions: business transaction type
+    * ActionUpdate_device_key_list TxAction = 30  // withdraw
+
+```json
+{
+  "chain_type": 1,
+  "address": "0xc9f53b1d85356b60453f867610888d89a0b667ad",
+  "actions": [
+    30
+  ]
+}
+```
+
+**Response**
+* status: tx pending
+
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": {
+    "block_number": 0,
+    "hash": "0x0343c250842fc57daef9fc30e5b9e1270c753a43215db46b19563c588417fcae",
+    "action": 30,
+    "status": 0
+  }
+}
+```
+
+```json
+{
+  "err_no": 11001,
+  "err_msg": "not exits tx",
+  "data": null
 }
 ```
