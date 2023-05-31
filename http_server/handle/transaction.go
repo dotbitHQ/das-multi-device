@@ -103,10 +103,17 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		}
 	}
 	if hasWebAuthn {
+		addHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+			ChainType:     common.ChainTypeWebauthn,
+			AddressNormal: req.SignAddress,
+		})
+		if err != nil {
+			return err
+		}
 		webAuthnLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
 			DasAlgorithmId: common.DasAlgorithmIdWebauthn,
 			ChainType:      common.ChainTypeWebauthn,
-			AddressHex:     sic.Address,
+			AddressHex:     addHex.AddressHex,
 		})
 		keyListConfigCellContract, err := core.GetDasContractInfo(common.DasKeyListCellType)
 		if err != nil {
@@ -153,7 +160,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			idx := -1
 			for i := 0; i < int(keyList.Len()); i++ {
 				mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])
-				subAlgId := common.DasWebauthnSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
+				subAlgId := common.DasSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
 				cid1 := keyList.Get(uint(i)).Cid().RawData()
 				pk1 := keyList.Get(uint(i)).Pubkey().RawData()
 				addressHex := common.Bytes2Hex(append(cid1, pk1...))
