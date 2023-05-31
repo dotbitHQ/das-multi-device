@@ -1,14 +1,11 @@
 package handle
 
 import (
-	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"encoding/hex"
-	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/gin-gonic/gin"
-	"github.com/nervosnetwork/ckb-sdk-go/address"
 	"github.com/scorpiotzh/toolib"
 	"net/http"
 )
@@ -60,40 +57,15 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 		if err != nil {
 			return err
 		}
-		payload := common.CaculateWebauthnPayload(masterCidBytes, masterPkBytes)
-		addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-			ChainType:     common.ChainTypeWebauthn,
-			AddressNormal: payload,
-			Is712:         true,
+		addressNormal, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
+			DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
+			DasSubAlgorithmId: common.DasWebauthnSubAlgorithmIdES256,
+			AddressHex:        common.CaculateWebauthnPayload(masterCidBytes, masterPkBytes),
 		})
-
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "HexToArgs err")
-			return fmt.Errorf("NormalToHex err: %s", err.Error())
+			return err
 		}
-
-		lockScript, _, err := h.dasCore.Daf().HexToScript(addressHex)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("HexToScript err: %s", err.Error())
-		}
-
-		if config.Cfg.Server.Net == common.DasNetTypeMainNet {
-			addr, err := address.ConvertScriptToAddress(address.Mainnet, lockScript)
-			if err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-				return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-			}
-
-			ckbAddress = append(ckbAddress, addr)
-		} else {
-			addr, err := address.ConvertScriptToAddress(address.Testnet, lockScript)
-			if err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-				return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-			}
-			ckbAddress = append(ckbAddress, addr)
-		}
+		ckbAddress = append(ckbAddress, addressNormal.AddressNormal)
 	}
 	resp.CkbAddress = ckbAddress
 	apiResp.ApiRespOK(resp)
