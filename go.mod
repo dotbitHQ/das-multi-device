@@ -3,9 +3,9 @@ module das-multi-device
 go 1.16
 
 require (
-	github.com/dotbitHQ/das-lib v1.0.2-0.20230531024920-730f898c67e0
+	github.com/dotbitHQ/das-lib v1.0.2-0.20230531043721-c5d9527d1405
 	github.com/fsnotify/fsnotify v1.5.4
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.5
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/jinzhu/gorm v1.9.16
 	github.com/nervosnetwork/ckb-sdk-go v0.101.3
@@ -13,7 +13,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/scorpiotzh/mylog v1.0.10
 	github.com/scorpiotzh/toolib v1.1.5
-	github.com/urfave/cli/v2 v2.3.0
+	github.com/urfave/cli/v2 v2.10.2
 	gorm.io/gorm v1.23.6
 )
 
