@@ -1,7 +1,6 @@
 package handle
 
 import (
-	"bytes"
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
@@ -153,16 +152,14 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 
 			idx := -1
 			for i := 0; i < int(keyList.Len()); i++ {
-				mainAlgId := keyList.Get(uint(i)).MainAlgId().RawData()
-				subAlgId := keyList.Get(uint(i)).SubAlgId().RawData()
+				mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])
+				subAlgId := common.DasWebauthnSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
 				cid1 := keyList.Get(uint(i)).Cid().RawData()
 				pk1 := keyList.Get(uint(i)).Pubkey().RawData()
-				buf := bytes.NewBuffer(mainAlgId)
-				buf.Write(subAlgId)
-				buf.Write(cid1)
-				buf.Write(pk1)
-				buf.Write(buf.Bytes())
-				if common.Bytes2Hex(buf.Bytes()) == dasAddressHex.AddressHex {
+				addressHex := common.Bytes2Hex(append(cid1, pk1...))
+				if dasAddressHex.DasAlgorithmId == mainAlgId &&
+					dasAddressHex.DasSubAlgorithmId == subAlgId &&
+					addressHex == dasAddressHex.AddressHex {
 					idx = i
 					break
 				}
