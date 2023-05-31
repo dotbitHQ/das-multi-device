@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
-	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"encoding/asn1"
 	"encoding/hex"
@@ -12,7 +11,6 @@ import (
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/gin-gonic/gin"
-	"github.com/nervosnetwork/ckb-sdk-go/address"
 	"github.com/scorpiotzh/toolib"
 	"math/big"
 	"net/http"
@@ -112,35 +110,16 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 	if realPubkey == nil {
 		return fmt.Errorf("recover faild")
 	}
-	webauthnPayload := common.GetWebauthnPayload(req.Cid, realPubkey)
-	addressHex := core.DasAddressHex{
+	normalAddress, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 		DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
 		DasSubAlgorithmId: common.DasWebauthnSubAlgorithmIdES256,
-		AddressHex:        webauthnPayload,
-		AddressPayload:    common.Hex2Bytes(webauthnPayload),
-		ChainType:         common.ChainTypeWebauthn,
-	}
-	lockScript, _, err := h.dasCore.Daf().HexToScript(addressHex)
+		AddressHex:        common.GetWebauthnPayload(req.Cid, realPubkey),
+	})
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-		return fmt.Errorf("HexToScript err: %s", err.Error())
+		return fmt.Errorf("HexToNormal err: %s", err.Error())
 	}
+	resp.CkbAddress = normalAddress.AddressNormal
 
-	if config.Cfg.Server.Net == common.DasNetTypeMainNet {
-		addr, err := address.ConvertScriptToAddress(address.Mainnet, lockScript)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-		}
-		resp.CkbAddress = addr
-	} else {
-		addr, err := address.ConvertScriptToAddress(address.Testnet, lockScript)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
-			return fmt.Errorf("ConvertScriptToAddress err: %s", err.Error())
-		}
-		resp.CkbAddress = addr
-	}
 	apiResp.ApiRespOK(resp)
 	return nil
 }
