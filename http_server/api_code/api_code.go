@@ -57,6 +57,7 @@ const (
 	MethodGetMasterAddr   = "das_get_masters_addr"
 	MethodAuthorize       = "das_authorize"
 	MethodTransactionSend = "das_transactionSend"
+	MethodTransactionStatus = "das_transactionStatus"
 )
 
 const (
