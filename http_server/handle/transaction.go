@@ -105,7 +105,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 	if hasWebAuthn {
 		addHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 			ChainType:     common.ChainTypeWebauthn,
-			AddressNormal: req.SignAddress,
+			AddressNormal: sic.Address,
 		})
 		if err != nil {
 			return err

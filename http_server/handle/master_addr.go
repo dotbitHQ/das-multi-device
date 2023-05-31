@@ -13,8 +13,9 @@ import (
 type ReqGetMasters struct {
 	Cid string `json:"cid" binding:"required"`
 }
+
 type RespGetMasters struct {
-	CkbAddress []string `json:ckb_address`
+	CkbAddress []string `json:"ckb_address"`
 }
 
 func (h *HttpHandle) GetMasters(ctx *gin.Context) {
