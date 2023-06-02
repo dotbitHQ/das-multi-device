@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/molecule"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
@@ -174,7 +175,13 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			if idx == -1 {
 				return errors.New("the current signing device is not in the authorized list")
 			}
-			req.SignList[i].SignMsg += fmt.Sprintf("%02x", idx)
+			signMsg := common.Hex2Bytes(req.SignList[i].SignMsg)
+			idxMolecule := molecule.GoU8ToMoleculeU8(uint8(idx))
+			idxLen := molecule.GoU8ToMoleculeU8(uint8(len(idxMolecule.RawData())))
+			signMsgRes := append(signMsg[:2], idxLen.RawData()...)
+			signMsgRes = append(signMsgRes, idxMolecule.RawData()...)
+			signMsgRes = append(signMsgRes, signMsg[2:]...)
+			req.SignList[i].SignMsg = common.Bytes2Hex(signMsgRes)
 		}
 	}
 
