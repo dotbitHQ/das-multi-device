@@ -116,9 +116,9 @@
   * sign_type:签名类型，webauthn是8
   * sign_address:签名的ckb地址
   * sign_msg:签名 
-    * 签名是用lv的格式将webauthn.get()（签名方法）同步响应的signature authnticatorData clientDataJSON三个字段按如下规则进行拼接
+    * 签名是用lv的格式将webauthn.get()（签名方法）同步响应的signature, authnticatorData, clientDataJSON 三个字段按如下规则进行拼接
     * len(signature) + signature + len(authnticatorData) + authnticatorData + len(sha256(clientDataJSON)) + sha256(clientDataJSON)
-    * 
+    * 其中len(*) 为1个字节，signature 为64字节，sha256(clientDataJSON)为32字节，authnticatorData为37字节
 ```json
 {
   "sign_key": "",
