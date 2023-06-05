@@ -425,3 +425,56 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 
 	return txParams, nil
 }
+
+type ReqAuthorizeInfo struct {
+	CkbAddress string `json:"ckb_address" binding:"required"`
+}
+type RespAuthorizeInfo struct {
+	EnableAuthorize int `json:"enable_authorize" binding:"required"`
+}
+
+func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
+	var (
+		funcName = "IfEnableAuthorize"
+		clientIp = GetClientIp(ctx)
+		req      *ReqAuthorizeInfo
+		apiResp  api_code.ApiResp
+		err      error
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		ctx.JSON(http.StatusOK, apiResp)
+		return
+	}
+
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+
+	if err = h.doAuthorizeInfo(req, &apiResp); err != nil {
+		log.Error("doIfEnableAuthorize err:", err.Error(), funcName, clientIp)
+	}
+
+	ctx.JSON(http.StatusOK, apiResp)
+}
+
+func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.ApiResp) (err error) {
+	var resp RespAuthorizeInfo
+	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+		ChainType:     common.ChainTypeWebauthn,
+		AddressNormal: req.CkbAddress,
+	})
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		return err
+	}
+	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
+	res, err := h.dbDao.GetCidPk(cid1)
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeDbError, "Search cidpk err")
+		return fmt.Errorf("SearchCidPk err: %s", err.Error())
+	}
+	resp.EnableAuthorize = int(res.EnableAuthorize)
+	apiResp.ApiRespOK(resp)
+	return nil
+}
