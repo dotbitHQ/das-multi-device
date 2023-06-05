@@ -178,9 +178,8 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			signMsg := common.Hex2Bytes(req.SignList[i].SignMsg)
 			idxMolecule := molecule.GoU8ToMoleculeU8(uint8(idx))
 			idxLen := molecule.GoU8ToMoleculeU8(uint8(len(idxMolecule.RawData())))
-			signMsgRes := append(signMsg[:2], idxLen.RawData()...)
-			signMsgRes = append(signMsgRes, idxMolecule.RawData()...)
-			signMsgRes = append(signMsgRes, signMsg[2:]...)
+			signMsgRes := append(idxLen.RawData(), idxMolecule.RawData()...)
+			signMsgRes = append(signMsgRes, signMsg...)
 			req.SignList[i].SignMsg = common.Bytes2Hex(signMsgRes)
 		}
 	}
