@@ -6,6 +6,9 @@
     * [Transaction Send](#transaction-send)
     * [Transaction Status](#transaction-status)
 ## API LIST
+test api url https://test-webauthn-api.did.id
+
+prod api url https://webauthn-api.did.id
 ### Ecdsa Ecrecover
 
 #### Request
