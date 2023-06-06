@@ -142,8 +142,9 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		if err != nil {
 			return err
 		}
-		dataBuilder := webAuthnKeyListConfigBuilder.WebAuthnKeyListData.AsBuilder()
-		keyList := dataBuilder.Build()
+		dataBuilder := webAuthnKeyListConfigBuilder.DeviceKeyListCellData.AsBuilder()
+		deviceKeyListCellDataBuilder := dataBuilder.Build()
+		keyList := deviceKeyListCellDataBuilder.Keys()
 
 		addressFormat := core.DasAddressFormat{
 			DasNetType: config.Cfg.Server.Net,

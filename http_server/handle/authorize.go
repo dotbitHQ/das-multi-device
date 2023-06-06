@@ -277,7 +277,7 @@ func (h *HttpHandle) checkCanBeCreated(payload string) (canCreate bool, err erro
 	return dasLockAmount > 0, nil
 }
 
-//create keyListConfigCell
+// create keyListConfigCell
 func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err error) {
 	delFunc, err := h.rc.LockWithRedis(common.ChainTypeWebauthn, payload, cache.CreateKeyListConfigCell, time.Minute*4)
 	if err != nil {
@@ -353,8 +353,26 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 	keyListBuilder.Push(deviceKeyBuilder.Build())
 	deviceKeyList := keyListBuilder.Build()
 
+	scriptBuilder := molecule.NewScriptBuilder()
+	scriptBuilder.Args(molecule.GoBytes2MoleculeBytes(h.serverScript.Args))
+	codeHash, err := molecule.HashFromSlice(h.serverScript.CodeHash.Bytes(), true)
+	if err != nil {
+		return nil, err
+	}
+	scriptBuilder.CodeHash(*codeHash)
+	hashType, err := h.serverScript.HashType.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	scriptBuilder.HashType(molecule.NewByte(hashType[0]))
+
+	cellDataBuilder := molecule.NewDeviceKeyListCellDataBuilder()
+	cellDataBuilder.Keys(deviceKeyList)
+	cellDataBuilder.RefundLock(scriptBuilder.Build())
+	cellData := cellDataBuilder.Build()
+
 	webAuthnBuilder := witness.WebAuthnKeyListDataBuilder{}
-	webAuthnBuilder.WebAuthnKeyListData = &deviceKeyList
+	webAuthnBuilder.DeviceKeyListCellData = &cellData
 	webAuthnBuilder.Version = common.GoDataEntityVersion3
 
 	klWitness, klData, err := webAuthnBuilder.GenWitness(&witness.WebauchnKeyListCellParam{
