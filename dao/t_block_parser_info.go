@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"das_register_server/tables"
+	"das-multi-device/tables"
 	"gorm.io/gorm/clause"
 )
 
