@@ -130,7 +130,8 @@ prod api url https://webauthn-api.did.id
   "err_no": 0,
   "err_msg": "",
   "data": {
-    "enable_authorize": 0
+    "enable_authorize": 0,
+    "ckb_address": ["ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"]
   }
 }
 ```

@@ -76,6 +76,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	}
 	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
+	pk1 := common.Bytes2Hex(masterAddressHex.AddressPayload[10:])
 	//Check if cid is enabled keyListConfigCell
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
@@ -90,15 +91,15 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("SearchCidPk err: %s", err.Error())
 		}
 		//Check if keyListConfigCell can be created
-		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
-			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
-		}
-		if !canCreate {
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
-			return fmt.Errorf("master_address hasn`t enable authorize")
-		}
+		//canCreate, err := h.checkCanBeCreated(masterPayloadHex)
+		//if err != nil {
+		//	apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+		//	return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
+		//}
+		//if !canCreate {
+		//	apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
+		//	return fmt.Errorf("master_address hasn`t enable authorize")
+		//}
 
 		//create keyListConfigCell
 		keyListConfigCellOutPoint, err = h.createKeyListCfgCell(masterPayloadHex)
@@ -107,6 +108,25 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return err
 		}
 
+		if res.Id == 0 {
+			if err := h.dbDao.SaveCidPk(tables.TableCidPk{
+				Cid:             cid1,
+				Pk:              pk1,
+				EnableAuthorize: tables.EnableAuthorizeOn,
+				Outpoint:        keyListConfigCellOutPoint,
+			}); err != nil {
+				apiResp.ApiRespErr(api_code.ApiCodeDbError, "create cid pk record error")
+				return err
+			}
+		}
+
+		if res.Id > 0 {
+			res.EnableAuthorize = tables.EnableAuthorizeOn
+			if err := h.dbDao.SaveCidPk(res); err != nil {
+				apiResp.ApiRespErr(api_code.ApiCodeDbError, "create cid pk record error")
+				return err
+			}
+		}
 	}
 
 	//update keyListConfigCell (add das-lock-key)
@@ -482,7 +502,8 @@ type ReqAuthorizeInfo struct {
 	CkbAddress string `json:"ckb_address" binding:"required"`
 }
 type RespAuthorizeInfo struct {
-	EnableAuthorize int `json:"enable_authorize" binding:"required"`
+	EnableAuthorize int      `json:"enable_authorize" binding:"required"`
+	CkbAddress      []string `json:"ckb_address"`
 }
 
 func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
@@ -527,6 +548,42 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	resp.EnableAuthorize = int(res.EnableAuthorize)
+	resp.CkbAddress = make([]string, 0)
+
+	if res.EnableAuthorize == tables.EnableAuthorizeOn {
+		outpoint := common.String2OutPointStruct(res.Outpoint)
+		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
+		if err != nil {
+			return err
+		}
+		builder, err := witness.WebAuthnKeyListDataBuilderFromTx(tx.Transaction, common.DataTypeNew)
+		if err != nil {
+			return err
+		}
+		keys := builder.DeviceKeyListCellData.Keys()
+		for i := uint(0); i < keys.Len(); i++ {
+			key := keys.Get(i)
+			mId, _ := molecule.Bytes2GoU8(key.MainAlgId().RawData())
+			subId, _ := molecule.Bytes2GoU8(key.SubAlgId().RawData())
+			cid1 := key.Cid().AsSlice()
+			pk1 := key.Pubkey().AsSlice()
+
+			if masterAddressHex.DasSubAlgorithmId == common.DasSubAlgorithmId(subId) &&
+				masterAddressHex.AddressHex == common.Bytes2Hex(append(cid1, pk1...)) {
+				continue
+			}
+
+			addrNormal, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
+				DasAlgorithmId:    common.DasAlgorithmId(mId),
+				DasSubAlgorithmId: common.DasSubAlgorithmId(subId),
+				AddressHex:        common.CaculateWebauthnPayload(cid1, pk1),
+			})
+			if err != nil {
+				return err
+			}
+			resp.CkbAddress = append(resp.CkbAddress, addrNormal.AddressNormal)
+		}
+	}
 	apiResp.ApiRespOK(resp)
 	return nil
 }

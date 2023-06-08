@@ -6,3 +6,8 @@ func (d *DbDao) GetCidPk(cid1 string) (authorize tables.TableCidPk, err error) {
 	err = d.parserDb.Where("`cid`= ? ", cid1).Find(&authorize).Error
 	return
 }
+
+func (d *DbDao) SaveCidPk(authorize tables.TableCidPk) (err error) {
+	err = d.parserDb.Save(&authorize).Error
+	return
+}
