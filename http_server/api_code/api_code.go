@@ -50,13 +50,14 @@ const (
 
 	ApiCodeHasNoAccessToCreate  ApiCode = 60000
 	ApiCodeCreateConfigCellFail ApiCode = 60001
+	ApiCodeHasNoAccessToRemove  ApiCode = 60002
 )
 
 const (
-	MethodEcdsaRecover    = "das_ecdsa_ecrecover"
-	MethodGetMasterAddr   = "das_get_masters_addr"
-	MethodAuthorize       = "das_authorize"
-	MethodTransactionSend = "das_transactionSend"
+	MethodEcdsaRecover      = "das_ecdsa_ecrecover"
+	MethodGetMasterAddr     = "das_get_masters_addr"
+	MethodAuthorize         = "das_authorize"
+	MethodTransactionSend   = "das_transactionSend"
 	MethodTransactionStatus = "das_transactionStatus"
 )
 

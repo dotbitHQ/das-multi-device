@@ -20,8 +20,9 @@ import (
 )
 
 type ReqAuthorize struct {
-	MasterCkbAddress string `json:"master_ckb_address" binding:"required"`
-	SlaveCkbAddress  string `json:"slave_ckb_address" binding:"required"`
+	MasterCkbAddress string                     `json:"master_ckb_address" binding:"required"`
+	SlaveCkbAddress  string                     `json:"slave_ckb_address" binding:"required"`
+	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"'` //operation = 0 删除，1 添加
 }
 
 type RespAuthorize struct {
@@ -30,6 +31,7 @@ type RespAuthorize struct {
 
 type reqBuildWebauthnTx struct {
 	Action          common.DasAction
+	Operation       common.WebAuchonKeyOperate
 	ChainType       common.ChainType
 	keyListConfigOp string
 	MasterPayLoad   []byte
@@ -81,7 +83,12 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
+
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
+		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
+			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
+			return fmt.Errorf("SearchCidPk err: %s", err.Error())
+		}
 		//Check if keyListConfigCell can be created
 		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
 		if err != nil {
@@ -111,8 +118,10 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
 		return err
 	}
+
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
 		Action:          common.DasActionUpdateKeyList,
+		Operation:       req.Operation,
 		ChainType:       common.ChainTypeWebauthn,
 		keyListConfigOp: keyListConfigCellOutPoint,
 		MasterPayLoad:   masterAddressHex.AddressPayload,
@@ -120,7 +129,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		Capacity:        0,
 	}
 
-	txParams, err := h.buildAddAuthorizeTx(&reqBuildWebauthnTx)
+	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "build tx err: "+err.Error())
 		return fmt.Errorf("buildAddAuthorizeTx err: %s", err.Error())
@@ -137,7 +146,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 
 }
 
-func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
+func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
 	var txParams txbuilder.BuildTransactionParams
 	contractDas, err := core.GetDasContractInfo(common.DasContractNameDispatchCellType)
 	if err != nil {
@@ -172,22 +181,47 @@ func (h *HttpHandle) buildAddAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.Bu
 
 	txParams.Outputs = append(txParams.Outputs, res.Transaction.Outputs[0])
 
-	//todo 确定第二个参数
 	builder, err := witness.WebAuthnKeyListDataBuilderFromTx(res.Transaction, common.DataTypeNew)
 	if err != nil {
 		return nil, fmt.Errorf("WebAuthnKeyListDataBuilderFromTx err: %s", err.Error())
 	}
-	var addKeyList witness.WebauthnKey
-	addKeyList.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
-	addKeyList.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
-	addKeyList.Cid = string(req.SlavePayload[:10])
-	addKeyList.PubKey = string(req.SlavePayload[10:])
+	var webAuthnKey witness.WebauthnKey
+	webAuthnKey.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
+	webAuthnKey.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
+	webAuthnKey.Cid = string(req.SlavePayload[:10])
+	webAuthnKey.PubKey = string(req.SlavePayload[10:])
+
+	nowKeyList := witness.ConvertToWebauthnKeyList(builder.DeviceKeyListCellData.Keys())
+	var newKeyList []witness.WebauthnKey
+	//add webAuthnKey
+	if req.Operation == common.AddWebAuthnKey {
+		for _, v := range nowKeyList {
+			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
+				return nil, fmt.Errorf("Cannot add repeatedly")
+			}
+		}
+		nowKeyList = append(nowKeyList, webAuthnKey)
+		newKeyList = nowKeyList
+	} else { //delete webAuthnKey
+		isExist := false
+		for _, v := range nowKeyList {
+			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
+				isExist = true
+			} else {
+				newKeyList = append(newKeyList, v)
+			}
+		}
+		if !isExist {
+			return nil, fmt.Errorf("this deviceKey isn`t exist")
+		}
+	}
 
 	klWitness, klData, err := builder.GenWitness(&witness.WebauchnKeyListCellParam{
-		Action:             common.DasActionUpdateKeyList,
-		OldIndex:           0,
-		NewIndex:           0,
-		AddWebauthnKeyList: addKeyList,
+		Action:            common.DasActionUpdateKeyList,
+		Operation:         req.Operation,
+		OldIndex:          0,
+		NewIndex:          0,
+		UpdateWebauthnKey: newKeyList,
 	})
 	txParams.Witnesses = append(txParams.Witnesses, klWitness)
 	txParams.OutputsData = append(txParams.OutputsData, klData)
