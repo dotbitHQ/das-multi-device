@@ -30,8 +30,10 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog(api_code.MethodGetMasterAddr), cacheHandleLong, h.h.GetMasters)
 		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), cacheHandleLong, h.h.Authorize)
 		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), cacheHandleLong, h.h.AuthorizeInfo)
+		v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.CaculateCkbaddr)
 		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), cacheHandleShort, h.h.TransactionSend)
 		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.TransactionStatus)
+
 	}
 }
 

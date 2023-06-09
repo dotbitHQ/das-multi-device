@@ -3,6 +3,7 @@
     * [Get Master Addr](#get-masters-addr)
     * [Authorize](#authorize)
     * [Authorize Info](#authorize-info)
+    * [Caculate CkbAddr](#caculate-ckbaddr)
     * [Transaction Send](#transaction-send)
     * [Transaction Status](#transaction-status)
 ## API LIST
@@ -135,6 +136,40 @@ prod api url https://webauthn-api.did.id
   }
 }
 ```
+
+
+### Caculate CkbAddr
+
+#### Request
+
+* path: /v1/webauthn/caculate-ckbaddr
+* params:
+  * cid: cid (string, necessary)
+  * pubkey
+    * x: hex x of ecdsa pubkey (string, necessary)
+    * y: hex y of ecdsa pubkey (string, necessary)
+```json
+{
+  "cid":"utOcr_4HGpY13WIZVvgIfwT7Kxtra1Y1IZiXkS71C7s",
+  "pubkey":{
+    "x":"e03f17de734abd6e39fd2e950d74cd2692d26f1906537d68063e9fce4929bd78",
+    "y":"77d16a61c64bba3277040c8bdbc4aa96bee28c39b3af7d012ff99c690b950694"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": {
+    "ckb_address": "ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqacs8j3mxpxj9v8qcwmaaxndrxpx2mamagyqwugreganqnfzkrsv8d77nfk3nqn9d7a75ntlrnc"
+  }
+}
+```
+
 
 
 ### Transaction Send
