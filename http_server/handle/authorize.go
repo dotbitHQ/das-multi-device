@@ -76,7 +76,6 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	}
 	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
-	pk1 := common.Bytes2Hex(masterAddressHex.AddressPayload[10:])
 	//Check if cid is enabled keyListConfigCell
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
@@ -91,41 +90,21 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("SearchCidPk err: %s", err.Error())
 		}
 		//Check if keyListConfigCell can be created
-		//canCreate, err := h.checkCanBeCreated(masterPayloadHex)
-		//if err != nil {
-		//	apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
-		//	return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
-		//}
-		//if !canCreate {
-		//	apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
-		//	return fmt.Errorf("master_address hasn`t enable authorize")
-		//}
+		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
+		}
+		if !canCreate {
+			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
+			return fmt.Errorf("master_address hasn`t enable authorize")
+		}
 
 		//create keyListConfigCell
 		keyListConfigCellOutPoint, err = h.createKeyListCfgCell(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
 			return err
-		}
-
-		if res.Id == 0 {
-			if err := h.dbDao.SaveCidPk(tables.TableCidPk{
-				Cid:             cid1,
-				Pk:              pk1,
-				EnableAuthorize: tables.EnableAuthorizeOn,
-				Outpoint:        keyListConfigCellOutPoint,
-			}); err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeDbError, "create cid pk record error")
-				return err
-			}
-		}
-
-		if res.Id > 0 {
-			res.EnableAuthorize = tables.EnableAuthorizeOn
-			if err := h.dbDao.SaveCidPk(res); err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeDbError, "create cid pk record error")
-				return err
-			}
 		}
 	}
 
