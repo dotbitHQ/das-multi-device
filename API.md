@@ -24,7 +24,7 @@ prod api url https://webauthn-api.did.id
 
 ```json
 {
-  "cid": "VCmB7OMwtqOtoRKlZRiQ1RvfQryMJu12wSAt3Zf_5EU",
+  "cid": "ae8836575d7d139c19525ad11d9d5a77216525e0e50d483caa7b21613973f87a",
   "sign_data": [
     {
       "authenticatorData": "49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000",
@@ -61,7 +61,7 @@ prod api url https://webauthn-api.did.id
     * cid: credential id (string, necessary)
 ```json
 {
-  "cid": "VCmB7OMwtqOtoRKlZRiQ1RvfQryMJu12wSAt3Zf_5EU"
+  "cid": "ae8836575d7d139c19525ad11d9d5a77216525e0e50d483caa7b21613973f87a"
 }
 ```
 
@@ -152,7 +152,7 @@ prod api url https://webauthn-api.did.id
     * y: hex y of ecdsa pubkey (string, necessary)
 ```json
 {
-  "cid":"utOcr_4HGpY13WIZVvgIfwT7Kxtra1Y1IZiXkS71C7s",
+  "cid":"ae8836575d7d139c19525ad11d9d5a77216525e0e50d483caa7b21613973f87a",
   "pubkey":{
     "x":"e03f17de734abd6e39fd2e950d74cd2692d26f1906537d68063e9fce4929bd78",
     "y":"77d16a61c64bba3277040c8bdbc4aa96bee28c39b3af7d012ff99c690b950694"
