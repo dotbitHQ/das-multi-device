@@ -101,6 +101,7 @@ function join() {
                             video = document.createElement("video")
                             video.id = peer.cid
                             video.autoplay = true
+                            video.controls = true
                             document.body.appendChild(video)
                         }
                         video.srcObject = e.streams[0]
@@ -160,6 +161,7 @@ function join() {
                         video = document.createElement("video")
                         video.id = msg.from
                         video.autoplay = true
+                        video.controls = true
                         document.body.appendChild(video)
                     }
                     video.srcObject = e.streams[0]
