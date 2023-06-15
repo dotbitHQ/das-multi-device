@@ -26,7 +26,7 @@ func (r *RedisCache) SetSignTxCache(key, txStr string) error {
 		return fmt.Errorf("redis is nil")
 	}
 	key = r.getSignTxCacheKey(key)
-	if err := r.red.Set(key, txStr, time.Minute*10).Err(); err != nil {
+	if err := r.red.Set(key, txStr, time.Hour*100).Err(); err != nil {
 		return err
 	}
 	return nil

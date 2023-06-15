@@ -16,8 +16,6 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 
-	"github.com/nervosnetwork/ckb-sdk-go/indexer"
-
 	"github.com/scorpiotzh/toolib"
 	"net/http"
 	"strings"
@@ -104,37 +102,39 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		}
 	}
 	if hasWebAuthn {
-		addHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-			ChainType:     common.ChainTypeWebauthn,
-			AddressNormal: sic.Address,
-		})
-		if err != nil {
-			return err
-		}
-		webAuthnLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
-			DasAlgorithmId: common.DasAlgorithmIdWebauthn,
-			ChainType:      common.ChainTypeWebauthn,
-			AddressHex:     addHex.AddressHex,
-		})
-		keyListConfigCellContract, err := core.GetDasContractInfo(common.DasKeyListCellType)
-		if err != nil {
-			return fmt.Errorf("GetDasContractInfo err: %s", err.Error())
-		}
-		searchKey := &indexer.SearchKey{
-			Script:     webAuthnLockScript,
-			ScriptType: indexer.ScriptTypeLock,
-			Filter: &indexer.CellsFilter{
-				Script: keyListConfigCellContract.ToScript(webAuthnLockScript.Args),
-			},
-		}
-		res, err := h.dasCore.Client().GetCells(h.ctx, searchKey, indexer.SearchOrderDesc, 1, "")
-		if err != nil {
-			return fmt.Errorf("GetCells err: %s", err.Error())
-		}
-		if len(res.Objects) == 0 {
-			return fmt.Errorf("can't find GetCells type: %s", common.DasKeyListCellType)
-		}
-		keyListConfigTx, err := h.dasCore.Client().GetTransaction(h.ctx, res.Objects[0].OutPoint.TxHash)
+		//addHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+		//	ChainType:     common.ChainTypeWebauthn,
+		//	AddressNormal: sic.Address,
+		//})
+		//if err != nil {
+		//	return err
+		//}
+		//webAuthnLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
+		//	DasAlgorithmId: common.DasAlgorithmIdWebauthn,
+		//	ChainType:      common.ChainTypeWebauthn,
+		//	AddressHex:     sic.Address,
+		//})
+		//keyListConfigCellContract, err := core.GetDasContractInfo(common.DasKeyListCellType)
+		//if err != nil {
+		//	return fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+		//}
+		//searchKey := &indexer.SearchKey{
+		//	Script:     webAuthnLockScript,
+		//	ScriptType: indexer.ScriptTypeLock,
+		//	Filter: &indexer.CellsFilter{
+		//		Script: keyListConfigCellContract.ToScript(webAuthnLockScript.Args),
+		//	},
+		//}
+		//res, err := h.dasCore.Client().GetCells(h.ctx, searchKey, indexer.SearchOrderDesc, 1, "")
+		//if err != nil {
+		//	return fmt.Errorf("GetCells err: %s", err.Error())
+		//}
+		//if len(res.Objects) == 0 {
+		//	return fmt.Errorf("can't find GetCells type: %s", common.DasKeyListCellType)
+		//}
+
+		keyListCfgOutPoint := common.String2OutPointStruct(sic.KeyListCfgCellOpt)
+		keyListConfigTx, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
 		if err != nil {
 			return err
 		}
@@ -151,14 +151,12 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		}
 		dasAddressHex, err := addressFormat.NormalToHex(core.DasAddressNormal{
 			ChainType:     common.ChainTypeWebauthn,
-			AddressNormal: req.SignAddress,
+			AddressNormal: req.SignAddress, //Signed address
 		})
-
 		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
 			}
-
 			idx := -1
 			for i := 0; i < int(keyList.Len()); i++ {
 				mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])

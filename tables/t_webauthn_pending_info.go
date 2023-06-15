@@ -20,7 +20,7 @@ type TableWebauthnPendingInfo struct {
 }
 
 const (
-	TableNameRegisterPendingInfo = "t_register_pending_info"
+	TableNameRegisterPendingInfo = "t_webauthn_pending_info"
 	StatusRejected               = -1
 	StatusConfirm                = 1
 	StatusPending                = 0

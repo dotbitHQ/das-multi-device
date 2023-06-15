@@ -34,6 +34,7 @@ type reqBuildWebauthnTx struct {
 	Operation       common.WebAuchonKeyOperate
 	ChainType       common.ChainType
 	keyListConfigOp string
+	MasterCkbAddr   string
 	MasterPayLoad   []byte
 	SlavePayload    []byte
 	Capacity        uint64 `json:"capacity"`
@@ -57,7 +58,7 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doAuthorize(&req, &apiResp); err != nil {
-		log.Error("doEditOwner err:", err.Error(), funcName, clientIp)
+		log.Error("doAuthorize err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -77,6 +78,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
+	fmt.Println("cid1: ", cid1)
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
@@ -109,7 +111,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return err
 		}
 	}
-
+	fmt.Println("outpoint: ", keyListConfigCellOutPoint)
 	//update keyListConfigCell (add das-lock-key)
 	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
@@ -125,6 +127,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		Operation:       req.Operation,
 		ChainType:       common.ChainTypeWebauthn,
 		keyListConfigOp: keyListConfigCellOutPoint,
+		MasterCkbAddr:   req.MasterCkbAddress,
 		MasterPayLoad:   masterAddressHex.AddressPayload,
 		SlavePayload:    slaveAddressHex.AddressPayload,
 		Capacity:        0,
@@ -179,7 +182,10 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}
 	//capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
-
+	fmt.Println("res.Transaction.Outputs: ", res.Transaction.Outputs)
+	if len(res.Transaction.Outputs) == 0 {
+		return nil, fmt.Errorf("KeyListCfgTransaction not exists")
+	}
 	txParams.Outputs = append(txParams.Outputs, res.Transaction.Outputs[0])
 
 	builder, err := witness.WebAuthnKeyListDataBuilderFromTx(res.Transaction, common.DataTypeNew)
@@ -261,8 +267,8 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	var sic SignInfoCache
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
-	sic.Address = common.Bytes2Hex(req.MasterPayLoad)
-
+	sic.Address = req.MasterCkbAddr
+	sic.KeyListCfgCellOpt = req.keyListConfigOp
 	sic.Capacity = req.Capacity
 	sic.BuilderTx = txBuilder.DasTxBuilderTransaction
 	signKey := sic.SignKey()
@@ -433,7 +439,7 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 		Type: keyListCfgCell.ToScript(nil),
 	}
 	keyListCfgOutput.Capacity = keyListCfgOutput.OccupiedCapacity(klData) * common.OneCkb
-	if keyListCfgOutput.Capacity < 161 * common.OneCkb {
+	if keyListCfgOutput.Capacity < 161*common.OneCkb {
 		keyListCfgOutput.Capacity = 161 * common.OneCkb
 	}
 	txParams.Outputs = append(txParams.Outputs, keyListCfgOutput)
