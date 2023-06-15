@@ -334,8 +334,9 @@ func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err 
 		return "", fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
 	}
 	sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
-	changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
-	txBuilder.Transaction.Outputs[0].Capacity = changeCapacity
+	changeFeeIdx := len(txBuilder.Transaction.Outputs) - 1
+	changeCapacity := txBuilder.Transaction.Outputs[changeFeeIdx].Capacity - sizeInBlock - 1000
+	txBuilder.Transaction.Outputs[changeFeeIdx].Capacity = changeCapacity
 
 	txHash, err := txBuilder.SendTransaction()
 	if err != nil {
