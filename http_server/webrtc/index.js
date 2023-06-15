@@ -54,7 +54,7 @@ function join() {
                     const offerPc = new RTCPeerConnection(iceConfig);
                     const answerPc = new RTCPeerConnection(iceConfig);
                     pcMap.set(peer.cid, {
-                        offer: offerPc, answer: answerPc,
+                        offer: offerPc, answer: answerPc
                     })
 
                     offerPc.onicecandidate = e => {
@@ -92,7 +92,11 @@ function join() {
                     answerPc.oniceconnectionstatechange = () => {
                         console.log("peers answer oniceconnectionstatechange", answerPc.iceConnectionState)
                         if (answerPc.iceConnectionState === "disconnected") {
-                            document.getElementById(peer.cid).remove()
+                            const video = document.getElementById(peer.cid)
+                            if (video.srcObject.id !== pcMap.get(peer.cid).streamId) {
+                                return
+                            }
+                            video.remove()
                             console.log("peers answer video removed")
                         }
                     }
@@ -107,6 +111,9 @@ function join() {
                             document.body.appendChild(video)
                         }
                         video.srcObject = e.streams[0]
+                        let pcs = pcMap.get(peer.cid)
+                        pcs["streamId"] = e.streams[0].id
+                        pcMap.set(peer.cid, pcs)
                     }
                     answerPc.addTransceiver('video', {direction: 'recvonly'})
                     answerPc.addTransceiver('audio', {direction: 'recvonly'})
@@ -145,7 +152,11 @@ function join() {
                 answerPc.oniceconnectionstatechange = () => {
                     console.log("offer answer oniceconnectionstatechange", answerPc.iceConnectionState)
                     if (answerPc.iceConnectionState === "disconnected") {
-                        document.getElementById(msg.from).remove()
+                        const video = document.getElementById(msg.from)
+                        if (video.srcObject.id !== pcMap.get(msg.from).streamId) {
+                            return
+                        }
+                        video.remove()
                         console.log("offer answer video removed")
                     }
                 }
@@ -160,6 +171,9 @@ function join() {
                         document.body.appendChild(video)
                     }
                     video.srcObject = e.streams[0]
+                    let pcs = pcMap.get(msg.from)
+                    pcs["streamId"] = e.streams[0].id
+                    pcMap.set(msg.from, pcs)
                 }
                 answerPc.addTransceiver('video', {direction: 'recvonly'})
                 answerPc.addTransceiver('audio', {direction: 'recvonly'})
