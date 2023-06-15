@@ -33,14 +33,8 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 	}
 	defer conn.Close()
 
-	conn.SetPingHandler(func(appData string) error {
-		log.Infof("ping: %s", appData)
-		return nil
-	})
-	conn.SetPongHandler(func(appData string) error {
-		log.Infof("pong: %s", appData)
-		return nil
-	})
+	conn.SetPingHandler(nil)
+	conn.SetPongHandler(nil)
 
 	for {
 		msg := &MsgData{}
