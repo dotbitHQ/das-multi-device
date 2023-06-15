@@ -92,6 +92,7 @@ function join() {
                         console.log("peers answer oniceconnectionstatechange", answerPc.iceConnectionState)
                         if (answerPc.iceConnectionState === "disconnected") {
                             document.getElementById(peer.cid).remove()
+                            console.log("peers answer video removed")
                         }
                     }
                     answerPc.ontrack = e => {
@@ -152,6 +153,7 @@ function join() {
                     console.log("offer answer oniceconnectionstatechange", answerPc.iceConnectionState)
                     if (answerPc.iceConnectionState === "disconnected") {
                         document.getElementById(msg.from).remove()
+                        console.log("offer answer video removed")
                     }
                 }
                 answerPc.ontrack = e => {
