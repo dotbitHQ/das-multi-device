@@ -412,7 +412,7 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 	webAuthnBuilder.Version = common.GoDataEntityVersion3
 
 	klWitness, klData, err := webAuthnBuilder.GenWitness(&witness.WebauchnKeyListCellParam{
-		Action: common.DasActionUpdateKeyList,
+		Action: common.DasActionCreateKeyList,
 	})
 	txParams.OutputsData = append(txParams.OutputsData, klData)
 
