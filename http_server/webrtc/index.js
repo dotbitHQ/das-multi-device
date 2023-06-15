@@ -94,6 +94,7 @@ function join() {
                         if (answerPc.iceConnectionState === "disconnected") {
                             const video = document.getElementById(peer.cid)
                             console.log("video streamId: ", video.srcObject.id, "pc streamId: ", pcMap.get(peer.cid).streamId)
+                            
                             if (video.srcObject.id !== pcMap.get(peer.cid).streamId) {
                                 return
                             }
