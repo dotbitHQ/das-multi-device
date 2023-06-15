@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"sync"
+	"time"
 )
 
 var upGrader = websocket.Upgrader{
@@ -32,6 +33,8 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "websocket Upgrader error")
 		return
 	}
+	exist := make(chan struct{})
+
 	defer func() {
 		_ = conn.Close()
 		peersMapLock.Lock()
@@ -39,11 +42,25 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 		delete(Conn2Cid, conn)
 		delete(PeersMap, cid)
 		peersMapLock.Unlock()
+		close(exist)
 	}()
 
 	conn.SetPingHandler(nil)
 	conn.SetPongHandler(nil)
 	conn.SetCloseHandler(nil)
+
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			select {
+			case <-exist:
+				return
+			default:
+				_ = conn.WriteMessage(websocket.PingMessage, []byte("ping"))
+			}
+		}
+	}()
 
 	for {
 		msg := &MsgData{}
