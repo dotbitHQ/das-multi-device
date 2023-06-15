@@ -433,8 +433,8 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 		Type: keyListCfgCell.ToScript(nil),
 	}
 	keyListCfgOutput.Capacity = keyListCfgOutput.OccupiedCapacity(klData) * common.OneCkb
-	if keyListCfgOutput.Capacity < common.MinCellOccupiedCkb {
-		keyListCfgOutput.Capacity = common.MinCellOccupiedCkb
+	if keyListCfgOutput.Capacity < 161 * common.OneCkb {
+		keyListCfgOutput.Capacity = 161 * common.OneCkb
 	}
 	txParams.Outputs = append(txParams.Outputs, keyListCfgOutput)
 
