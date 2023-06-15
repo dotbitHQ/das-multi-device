@@ -3,6 +3,7 @@ package http_server
 import (
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
+	"das-multi-device/http_server/webrtc"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
@@ -33,7 +34,8 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.CaculateCkbaddr)
 		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), cacheHandleShort, h.h.TransactionSend)
 		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.TransactionStatus)
-
+		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
+		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
 	}
 }
 
