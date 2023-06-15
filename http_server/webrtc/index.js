@@ -2,6 +2,14 @@ let localStream;
 let pcMap = new Map()
 let socket;
 
+const iceConfig = {
+    iceServers: [{
+        urls: 'stun:stun.l.google.com:19302'
+    }, {
+        urls: 'turn:8.210.83.164:3478', username: 'root', credential: 'root'
+    }]
+}
+
 navigator.mediaDevices.getUserMedia({
     audio: true, video: true,
 }).then(function (stream) {
@@ -43,16 +51,8 @@ function join() {
                 }
 
                 msg.data.peers.forEach(function (peer) {
-                    const offerPc = new RTCPeerConnection({
-                        iceServers: [{
-                            urls: 'stun:stun.l.google.com:19302'
-                        }]
-                    });
-                    const answerPc = new RTCPeerConnection({
-                        iceServers: [{
-                            urls: 'stun:stun.l.google.com:19302'
-                        }]
-                    });
+                    const offerPc = new RTCPeerConnection(iceConfig);
+                    const answerPc = new RTCPeerConnection(iceConfig);
                     pcMap.set(peer.cid, {
                         offer: offerPc, answer: answerPc,
                     })
@@ -129,16 +129,8 @@ function join() {
                     break
                 }
 
-                answerPc = new RTCPeerConnection({
-                    iceServers: [{
-                        urls: 'stun:stun.l.google.com:19302'
-                    }]
-                });
-                let offerPc = new RTCPeerConnection({
-                    iceServers: [{
-                        urls: 'stun:stun.l.google.com:19302'
-                    }]
-                })
+                answerPc = new RTCPeerConnection(iceConfig);
+                let offerPc = new RTCPeerConnection(iceConfig)
                 pcMap.set(msg.from, {
                     "answer": answerPc, "offer": offerPc
                 })
