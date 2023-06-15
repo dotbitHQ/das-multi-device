@@ -93,9 +93,7 @@ function join() {
                         console.log("peers answer oniceconnectionstatechange", answerPc.iceConnectionState)
                         if (answerPc.iceConnectionState === "disconnected") {
                             const video = document.getElementById(peer.cid)
-                            console.log("video streamId: ", video.srcObject.id, "pc streamId: ", pcMap.get(peer.cid).streamId)
-                            
-                            if (video.srcObject.id !== pcMap.get(peer.cid).streamId) {
+                            if (video.srcObject.active) {
                                 return
                             }
                             video.remove()
@@ -155,8 +153,7 @@ function join() {
                     console.log("offer answer oniceconnectionstatechange", answerPc.iceConnectionState)
                     if (answerPc.iceConnectionState === "disconnected") {
                         const video = document.getElementById(msg.from)
-                        console.log("video streamId: ", video.srcObject.id, "pc streamId: ", pcMap.get(msg.from).streamId)
-                        if (video.srcObject.id !== pcMap.get(msg.from).streamId) {
+                        if (video.srcObject.active) {
                             return
                         }
                         video.remove()
