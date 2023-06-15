@@ -90,6 +90,9 @@ function join() {
                     }
                     answerPc.oniceconnectionstatechange = () => {
                         console.log("peers answer oniceconnectionstatechange", answerPc.iceConnectionState)
+                        if (answerPc.iceConnectionState === "disconnected") {
+                            document.getElementById(peer.cid).remove()
+                        }
                     }
                     answerPc.ontrack = e => {
                         console.log("peers answer ontrack", e)
@@ -146,6 +149,9 @@ function join() {
                 }
                 answerPc.oniceconnectionstatechange = () => {
                     console.log("offer answer oniceconnectionstatechange", answerPc.iceConnectionState)
+                    if (answerPc.iceConnectionState === "disconnected") {
+                        document.getElementById(msg.from).remove()
+                    }
                 }
                 answerPc.ontrack = e => {
                     console.log("offer answer ontrack", e)
