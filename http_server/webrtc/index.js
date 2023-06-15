@@ -22,8 +22,9 @@ navigator.mediaDevices.getUserMedia({
 
 function join() {
     socket = new WebSocket(`wss://${window.location.host}/v1/webrtc/socket`)
-
     socket.onmessage = e => {
+        console.log(e)
+
         let answerPc;
         let msg = JSON.parse(e.data)
         if (!msg) {
