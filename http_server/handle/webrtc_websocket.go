@@ -22,6 +22,7 @@ type MsgData struct {
 
 var peersMapLock = sync.RWMutex{}
 var PeersMap = map[string]*websocket.Conn{}
+var Conn2Cid = map[*websocket.Conn]string{}
 
 func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 	apiResp := api_code.ApiResp{}
@@ -31,10 +32,18 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 		apiResp.ApiRespErr(api_code.ApiCodeError500, "websocket Upgrader error")
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+		peersMapLock.Lock()
+		cid := Conn2Cid[conn]
+		delete(Conn2Cid, conn)
+		delete(PeersMap, cid)
+		peersMapLock.Unlock()
+	}()
 
 	conn.SetPingHandler(nil)
 	conn.SetPongHandler(nil)
+	conn.SetCloseHandler(nil)
 
 	for {
 		msg := &MsgData{}
@@ -47,6 +56,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 		case "join":
 			peersMapLock.Lock()
 			PeersMap[msg.From] = conn
+			Conn2Cid[conn] = msg.From
 			peersMapLock.Unlock()
 
 			cids := make([]map[string]interface{}, 0)
