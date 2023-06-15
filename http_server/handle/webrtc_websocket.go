@@ -55,6 +55,26 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 		switch msg.Type {
 		case "join":
 			peersMapLock.Lock()
+			wg := sync.WaitGroup{}
+			wg.Add(len(PeersMap))
+			for k, v := range PeersMap {
+				cid := k
+				peerConn := v
+				go func() {
+					defer wg.Done()
+					if err := peerConn.WriteJSON(MsgData{
+						To:   cid,
+						Type: "peers",
+						Data: map[string]interface{}{
+							"peers": msg.From,
+						},
+					}); err != nil {
+						log.Errorf("send joiner to others err: %s", err)
+					}
+				}()
+			}
+			wg.Wait()
+
 			PeersMap[msg.From] = conn
 			Conn2Cid[conn] = msg.From
 			peersMapLock.Unlock()
