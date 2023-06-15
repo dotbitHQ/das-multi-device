@@ -19,6 +19,7 @@ navigator.mediaDevices.getUserMedia({
         video = document.createElement("video")
         video.id = cid
         video.autoplay = true
+        video.controls = true
         document.body.appendChild(video)
     }
     video.srcObject = stream
