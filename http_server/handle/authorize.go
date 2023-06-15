@@ -22,7 +22,7 @@ import (
 type ReqAuthorize struct {
 	MasterCkbAddress string                     `json:"master_ckb_address" binding:"required"`
 	SlaveCkbAddress  string                     `json:"slave_ckb_address" binding:"required"`
-	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"'` //operation = 0 删除，1 添加
+	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"` //operation = 0 删除，1 添加
 }
 
 type RespAuthorize struct {
@@ -90,14 +90,16 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("SearchCidPk err: %s", err.Error())
 		}
 		//Check if keyListConfigCell can be created
-		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
-			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
-		}
-		if !canCreate {
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
-			return fmt.Errorf("master_address hasn`t enable authorize")
+		if config.Cfg.Server.Net == common.DasNetTypeMainNet {
+			canCreate, err := h.checkCanBeCreated(masterPayloadHex)
+			if err != nil {
+				apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+				return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
+			}
+			if !canCreate {
+				apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
+				return fmt.Errorf("master_address hasn`t enable authorize")
+			}
 		}
 
 		//create keyListConfigCell
