@@ -11,7 +11,10 @@ const iceConfig = {
 }
 
 navigator.mediaDevices.getUserMedia({
-    audio: true, video: true,
+    audio: {
+        noiseSuppression: true, echoCancellation: true,
+    }, video: true,
+
 }).then(function (stream) {
     let cid = getCid()
     let video = document.getElementById(cid)
