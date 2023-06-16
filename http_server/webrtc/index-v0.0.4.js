@@ -12,9 +12,15 @@ const iceConfig = {
 
 navigator.mediaDevices.getUserMedia({
     audio: {
-        noiseSuppression: true, echoCancellation: true,
+        echoCancellationType: 'system',
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: false,
+        sampleRate: 24000,
+        sampleSize: 16,
+        channelCount: 2,
+        volume: 0.5
     }, video: true,
-
 }).then(function (stream) {
     let cid = getCid()
     let video = document.getElementById(cid)
