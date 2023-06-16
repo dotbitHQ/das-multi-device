@@ -160,10 +160,10 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}
-	keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListCellType)
-	if err != nil {
-		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
-	}
+	//keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListCellType)
+	//if err != nil {
+	//	return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
+	//}
 
 	// inputs account cell
 	keyListCfgOutPoint := common.String2OutPointStruct(req.keyListConfigOp)
@@ -237,7 +237,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	txParams.CellDeps = append(txParams.CellDeps,
 		contractDas.ToCellDep(),
 		configMain.ToCellDep(),
-		keyListCfgCell.ToCellDep(),
+		//keyListCfgCell.ToCellDep(),
 	)
 	return &txParams, nil
 }
