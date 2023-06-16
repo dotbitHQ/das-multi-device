@@ -30,14 +30,15 @@ type RespAuthorize struct {
 }
 
 type reqBuildWebauthnTx struct {
-	Action          common.DasAction
-	Operation       common.WebAuchonKeyOperate
-	ChainType       common.ChainType
-	keyListConfigOp string
-	MasterCkbAddr   string
-	MasterPayLoad   []byte
-	SlavePayload    []byte
-	Capacity        uint64 `json:"capacity"`
+	Action            common.DasAction
+	Operation         common.WebAuchonKeyOperate
+	ChainType         common.ChainType
+	keyListConfigOp   string
+	KeyListConfigCell *types.CellOutput
+	MasterCkbAddr     string
+	MasterPayLoad     []byte
+	SlavePayload      []byte
+	Capacity          uint64 `json:"capacity"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
@@ -85,7 +86,8 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
-
+	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
+	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
 		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
@@ -105,7 +107,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		}
 
 		//create keyListConfigCell
-		keyListConfigCellOutPoint, err = h.createKeyListCfgCell(masterPayloadHex)
+		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
 			return err
@@ -123,14 +125,15 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	}
 
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
-		Action:          common.DasActionUpdateKeyList,
-		Operation:       req.Operation,
-		ChainType:       common.ChainTypeWebauthn,
-		keyListConfigOp: keyListConfigCellOutPoint,
-		MasterCkbAddr:   req.MasterCkbAddress,
-		MasterPayLoad:   masterAddressHex.AddressPayload,
-		SlavePayload:    slaveAddressHex.AddressPayload,
-		Capacity:        0,
+		Action:            common.DasActionUpdateKeyList,
+		Operation:         req.Operation,
+		ChainType:         common.ChainTypeWebauthn,
+		keyListConfigOp:   keyListConfigCellOutPoint,
+		KeyListConfigCell: keyListConfigCell,
+		MasterCkbAddr:     req.MasterCkbAddress,
+		MasterPayLoad:     masterAddressHex.AddressPayload,
+		SlavePayload:      slaveAddressHex.AddressPayload,
+		Capacity:          0,
 	}
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
@@ -244,6 +247,18 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 
 func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*SignInfo, error) {
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, nil)
+
+	//if it is a newly created KeyListConfigCell, use it in req
+	if req.KeyListConfigCell != nil {
+		txBuilder.MapInputsCell[req.keyListConfigOp] = &types.CellWithStatus{
+			Cell: &types.CellInfo{
+				Data:   nil,
+				Output: req.KeyListConfigCell,
+			},
+			Status: "",
+		}
+	}
+
 	if err := txBuilder.BuildTransaction(txParams); err != nil {
 		return nil, fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
 	}
@@ -319,10 +334,10 @@ func (h *HttpHandle) checkCanBeCreated(payload string) (canCreate bool, err erro
 }
 
 // create keyListConfigCell
-func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err error) {
+func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, outPointCell *types.CellOutput, err error) {
 	delFunc, err := h.rc.LockWithRedis(common.ChainTypeWebauthn, payload, cache.CreateKeyListConfigCell, time.Minute*4)
 	if err != nil {
-		return "", fmt.Errorf("createKeyListCfgCell LockWithRedis err :%s", err.Error())
+		return "", nil, fmt.Errorf("createKeyListCfgCell LockWithRedis err :%s", err.Error())
 	}
 	defer func() {
 		if err := delFunc(); err != nil {
@@ -332,12 +347,12 @@ func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err 
 
 	txParams, err := h.buildCreateKeyListCfgTx(payload)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, nil)
 	if err := txBuilder.BuildTransaction(txParams); err != nil {
-		return "", fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
+		return "", nil, fmt.Errorf("txBuilder.BuildTransaction err: %s", err.Error())
 	}
 	sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
 	changeFeeIdx := len(txBuilder.Transaction.Outputs) - 1
@@ -346,11 +361,11 @@ func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, err 
 
 	txHash, err := txBuilder.SendTransaction()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	outpoint := common.OutPoint2String(txHash.Hex(), 0)
 
-	return outpoint, nil
+	return outpoint, txParams.Outputs[0], nil
 }
 
 func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder.BuildTransactionParams, error) {
