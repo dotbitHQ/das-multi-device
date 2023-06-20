@@ -34,12 +34,12 @@ func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, e
 			return nil, err
 		}
 
-		if err = parserDb.AutoMigrate(
-			&tables.TableAuthorize{},
-			&tables.TableCidPk{},
-		); err != nil {
-			return nil, err
-		}
+		//if err = parserDb.AutoMigrate(
+		//	&tables.TableAuthorize{},
+		//	&tables.TableCidPk{},
+		//); err != nil {
+		//	return nil, err
+		//}
 	}
 	return &DbDao{db: db, parserDb: parserDb}, nil
 }
