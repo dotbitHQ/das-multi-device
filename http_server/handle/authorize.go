@@ -85,7 +85,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
-	keyListConfigCellOutPoint = res.Outpoint
+	keyListConfigCellOutPoint = res.KeylistOutpoint
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
@@ -163,10 +163,6 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	if err != nil {
 		return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
 	}
-	//keyListCfgCell, err := core.GetDasContractInfo(common.DasKeyListCellType)
-	//if err != nil {
-	//	return nil, fmt.Errorf("GetDasContractInfo err: %s", err.Error())
-	//}
 
 	// inputs account cell
 	keyListCfgOutPoint := common.String2OutPointStruct(req.keyListConfigOp)
@@ -198,16 +194,18 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	var webAuthnKey witness.WebauthnKey
 	webAuthnKey.MinAlgId = uint8(common.DasAlgorithmIdWebauthn)
 	webAuthnKey.SubAlgId = uint8(common.DasWebauthnSubAlgorithmIdES256)
-	webAuthnKey.Cid = string(req.SlavePayload[:10])
-	webAuthnKey.PubKey = string(req.SlavePayload[10:])
+	webAuthnKey.Cid = common.Bytes2Hex(req.SlavePayload[:10])
+	webAuthnKey.PubKey = common.Bytes2Hex(req.SlavePayload[10:])
 
 	nowKeyList := witness.ConvertToWebauthnKeyList(builder.DeviceKeyListCellData.Keys())
 	var newKeyList []witness.WebauthnKey
+	fmt.Println("nowKeyList: ", nowKeyList)
+	fmt.Println(webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
-				return nil, fmt.Errorf("Cannot add repeatedly")
+				//return nil, fmt.Errorf("Cannot add repeatedly")
 			}
 		}
 		nowKeyList = append(nowKeyList, webAuthnKey)
@@ -240,7 +238,6 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	txParams.CellDeps = append(txParams.CellDeps,
 		contractDas.ToCellDep(),
 		configMain.ToCellDep(),
-		//keyListCfgCell.ToCellDep(),
 	)
 	return &txParams, nil
 }
@@ -557,7 +554,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 	resp.CkbAddress = make([]string, 0)
 
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
-		outpoint := common.String2OutPointStruct(res.Outpoint)
+		outpoint := common.String2OutPointStruct(res.KeylistOutpoint)
 		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
 		if err != nil {
 			return err
