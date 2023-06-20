@@ -85,7 +85,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
-	keyListConfigCellOutPoint = res.KeylistOutpoint
+	keyListConfigCellOutPoint = res.Outpoint
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
@@ -554,7 +554,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 	resp.CkbAddress = make([]string, 0)
 
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
-		outpoint := common.String2OutPointStruct(res.KeylistOutpoint)
+		outpoint := common.String2OutPointStruct(res.Outpoint)
 		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
 		if err != nil {
 			return err
