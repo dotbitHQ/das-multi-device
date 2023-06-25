@@ -14,8 +14,6 @@ import (
 	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-	"github.com/jinzhu/gorm"
-
 	"github.com/scorpiotzh/toolib"
 	"net/http"
 	"strings"
@@ -270,16 +268,16 @@ type RespTransactionStatus struct {
 }
 
 func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api_code.ApiResp) error {
-	addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-		ChainType:     req.ChainType,
-		AddressNormal: req.Address,
-		Is712:         true,
-	})
-	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "address NormalToHex err")
-		return fmt.Errorf("NormalToHex err: %s", err.Error())
-	}
-	req.ChainType, req.Address = addressHex.ChainType, addressHex.AddressHex
+	//addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+	//	ChainType:     req.ChainType,
+	//	AddressNormal: req.Address,
+	//	Is712:         true,
+	//})
+	//if err != nil {
+	//	apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "address NormalToHex err")
+	//	return fmt.Errorf("NormalToHex err: %s", err.Error())
+	//}
+	//req.ChainType, req.Address = addressHex.ChainType, addressHex.AddressHex
 
 	var resp RespTransactionStatus
 	actionList := make([]common.DasAction, 0)
@@ -288,7 +286,7 @@ func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api
 	}
 
 	tx, err := h.dbDao.GetPendingStatus(req.ChainType, req.Address, actionList)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && err.Error() != "record not found" {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search tx status err")
 		return fmt.Errorf("GetTransactionStatus err: %s", err.Error())
 	}

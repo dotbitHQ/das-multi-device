@@ -104,11 +104,13 @@ prod api url https://webauthn-api.did.id
   "err_no": 0,
   "err_msg": "",
   "data": {
-    "sign_key": "a7b9e04717dfcb729a0becde959e49d3",
-    "sign_list": [{
-      "sign_type": 8,
-      "sign_msg": "From .bit: 0cd1832efdd772927f8b3fb6274fbc33558d942bbfe19061daf19c456cea60af"
-    }]
+    "sign_key": "131fa067a0f34135898f1a85104bccf4",
+    "sign_list": [
+      {
+        "sign_type": 8,
+        "sign_msg": "0xea460b7fecf50e3cce7f25631e10da3e8c9e330b861ad5cbbfbfbcb5c14f1206"
+      }
+    ]
   }
 }
 ```
@@ -189,14 +191,14 @@ prod api url https://webauthn-api.did.id
     * 其中len(signature) 为1个字节，len(authnticatorData)为1个字节，len(clientDataJSON)为2个字节的小端存储
 ```json
 {
-  "sign_key": "",
+  "sign_key": "131fa067a0f34135898f1a85104bccf4",
   "sign_list": [
     {
       "sign_type": 8,
-      "sign_address": "ckt1qyqxgwjt9gn7vgk2rnny5lf33dtak4nexkasjsje75",
-      "sign_msg": ""
+      "sign_msg": "40c18953114dd7dafde87b5d1aa2a4a2b99aab94e024fcb5cce34b2b875dd714c12b726bfdb1ac5272b326526ce42eb622432eecc667eb13560b772ba2e96dfdba2549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000b1007b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a225a5745304e6a42694e325a6c593259314d47557a59324e6c4e3259794e54597a4d5755784d4752684d325534597a6c6c4d7a4d77596a67324d57466b4e574e69596d5a695a6d4a6a596a566a4d54526d4d5449774e67222c226f726967696e223a22687474703a2f2f6c6f63616c686f73743a38303031222c2263726f73734f726967696e223a66616c73657d"
     }
-  ]
+  ],
+  "sign_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggquyxv8jked54atrex9zwks38g48fy73vdsyqwzrxretvk62743unz38tggn52n5j0gkxcmk8jru"
 }
 ```
 
