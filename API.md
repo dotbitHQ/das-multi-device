@@ -225,11 +225,9 @@ prod api url https://webauthn-api.did.id
 
 ```json
 {
-  "chain_type": 1,
-  "address": "0xc9f53b1d85356b60453f867610888d89a0b667ad",
-  "actions": [
-    30
-  ]
+  "actions":[30],
+  "chain_type": 8,
+  "address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggquyxv8jked54atrex9zwks38g48fy73vdsyqwzrxretvk62743unz38tggn52n5j0gkxcmk8jru"
 }
 ```
 
