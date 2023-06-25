@@ -91,7 +91,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
 		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
-			return fmt.Errorf("SearchCidPk err: %s", err.Error())
+			return nil
 		}
 		//Check if keyListConfigCell can be created
 		if config.Cfg.Server.Net == common.DasNetTypeMainNet {

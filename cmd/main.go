@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"das-multi-device/block_parser"
 	"das-multi-device/cache"
 	"das-multi-device/config"
 	"das-multi-device/dao"
@@ -89,6 +90,22 @@ func runServer(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("initTxBuilder err: %s", err.Error())
 	}
+
+	// block parser
+	bp := block_parser.BlockParser{
+		DasCore:            dasCore,
+		CurrentBlockNumber: config.Cfg.Chain.CurrentBlockNumber,
+		DbDao:              dbDao,
+		ConcurrencyNum:     config.Cfg.Chain.ConcurrencyNum,
+		ConfirmNum:         config.Cfg.Chain.ConfirmNum,
+		Ctx:                ctxServer,
+		Cancel:             cancel,
+		Wg:                 &wgServer,
+	}
+	if err := bp.Run(); err != nil {
+		return fmt.Errorf("block parser err: %s", err.Error())
+	}
+	log.Info("block parser ok")
 
 	// http
 	hs, err := http_server.Initialize(http_server.HttpServerParams{

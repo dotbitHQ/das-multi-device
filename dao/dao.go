@@ -30,6 +30,7 @@ func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, e
 	if autoMigrate {
 		if err = db.AutoMigrate(
 			&tables.TableWebauthnPendingInfo{},
+			&tables.TableBlockParserInfo{},
 		); err != nil {
 			return nil, err
 		}
