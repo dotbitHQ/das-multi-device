@@ -205,13 +205,16 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	if req.Operation == common.AddWebAuthnKey {
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
-				//return nil, fmt.Errorf("Cannot add repeatedly")
+				return nil, fmt.Errorf("Cannot add repeatedly")
 			}
 		}
 		nowKeyList = append(nowKeyList, webAuthnKey)
 		newKeyList = nowKeyList
 	} else { //delete webAuthnKey
 		isExist := false
+		if nowKeyList[0].Cid == webAuthnKey.Cid {
+			return nil, fmt.Errorf("Cannot delete the owner of keylist")
+		}
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
 				isExist = true
