@@ -186,16 +186,16 @@ prod api url https://webauthn-api.did.id
   * sign_type:签名类型，webauthn是8
   * sign_address:签名的ckb地址
   * sign_msg:签名 
-    * 签名是用lv的格式将webauthn.get()（签名方法）同步响应的signature, authnticatorData, clientDataJSON 三个字段按如下规则进行拼接
-    * len(signature) + signature + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
-    * 其中len(signature) 为1个字节，len(authnticatorData)为1个字节，len(clientDataJSON)为2个字节的小端存储
+    * 签名是用LV的格式将webauthn.get()（签名方法）同步响应的signature, authnticatorData, clientDataJSON 三个字段按如下规则进行拼接
+    * len(signature) + signature + len(pubkey) + pubkey + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
+    * 其中len(signature) 为1个字节，len(pubkey) 为1个字节，len(authnticatorData)为1个字节，len(clientDataJSON)为2个字节的小端存储
 ```json
 {
   "sign_key": "131fa067a0f34135898f1a85104bccf4",
   "sign_list": [
     {
       "sign_type": 8,
-      "sign_msg": "40c18953114dd7dafde87b5d1aa2a4a2b99aab94e024fcb5cce34b2b875dd714c12b726bfdb1ac5272b326526ce42eb622432eecc667eb13560b772ba2e96dfdba2549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000b1007b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a225a5745304e6a42694e325a6c593259314d47557a59324e6c4e3259794e54597a4d5755784d4752684d325534597a6c6c4d7a4d77596a67324d57466b4e574e69596d5a695a6d4a6a596a566a4d54526d4d5449774e67222c226f726967696e223a22687474703a2f2f6c6f63616c686f73743a38303031222c2263726f73734f726967696e223a66616c73657d"
+      "sign_msg": "40ebc710aca131c7289cb74470ee12d6e9b75a160debcf17c486bfe9c37ad24ddd4efb14f5224b90c46cc0fc66c9a4fdc8255dd27575dc53589408c489fe9a8332403edc4f6d1ba31cae2f8e7af0b6d82d79c695576c837df0105bf4d1d785831c556dd11a9ccb13ddafa8c9c978c9a98b4e74579956ffd36b2a00f09f858e8a22242549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000b1007b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a22596a55304d546b34596a45784e7a49354d5463795a4463774f4449314d4467784f4445314e445931595464694f54466d597a63775a5752685a574a6a595755305a446b334d6a67334d4463784d3255785a5441334e67222c226f726967696e223a22687474703a2f2f6c6f63616c686f73743a38303031222c2263726f73734f726967696e223a66616c73657d"
     }
   ],
   "sign_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggquyxv8jked54atrex9zwks38g48fy73vdsyqwzrxretvk62743unz38tggn52n5j0gkxcmk8jru"
