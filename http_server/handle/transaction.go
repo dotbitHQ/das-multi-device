@@ -285,7 +285,7 @@ func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api
 		actionList = append(actionList, tables.FormatActionType(v))
 	}
 
-	tx, err := h.dbDao.GetPendingStatus(req.ChainType, req.Address, actionList)
+	tx, err := h.dbDao.GetTxStatus(req.ChainType, req.Address, actionList)
 	if err != nil && err.Error() != "record not found" {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search tx status err")
 		return fmt.Errorf("GetTransactionStatus err: %s", err.Error())

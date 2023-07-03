@@ -232,7 +232,7 @@ prod api url https://webauthn-api.did.id
 ```
 
 **Response**
-* status: tx pending
+* status: 0:default(pending) -1:rejected 1:confirm
 
 ```json
 {
