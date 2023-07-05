@@ -86,9 +86,11 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
+	fmt.Println("db outpoint: ", keyListConfigCellOutPoint)
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
+
 		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
 			return nil
@@ -147,7 +149,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	} else {
 		resp.SignInfo = *si
 	}
-
+	
 	apiResp.ApiRespOK(resp)
 	return nil
 

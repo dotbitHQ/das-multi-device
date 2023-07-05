@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
 	"net/http"
-	"time"
 )
 
 func (h *HttpServer) initRouter() {
@@ -22,18 +21,18 @@ func (h *HttpServer) initRouter() {
 
 	v1 := h.engine.Group("v1")
 	{
-		shortExpireTime, longExpireTime, lockTime := time.Second*5, time.Second*15, time.Minute
-		shortDataTime, longDataTime := time.Minute*3, time.Minute*10
-		cacheHandleShort := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, shortDataTime, lockTime, shortExpireTime, respHandle)
-		cacheHandleLong := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, longDataTime, lockTime, longExpireTime, respHandle)
+		//shortExpireTime, longExpireTime, lockTime := time.Second*5, time.Second*15, time.Minute
+		//shortDataTime, longDataTime := time.Minute*3, time.Minute*10
+		//cacheHandleShort := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, shortDataTime, lockTime, shortExpireTime, respHandle)
+		//cacheHandleLong := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, longDataTime, lockTime, longExpireTime, respHandle)
 
-		v1.POST("/webauthn/ecdsa-ecrecover", api_code.DoMonitorLog(api_code.MethodEcdsaRecover), cacheHandleShort, h.h.Ecrecover)
-		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog(api_code.MethodGetMasterAddr), cacheHandleLong, h.h.GetMasters)
-		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), cacheHandleLong, h.h.Authorize)
-		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), cacheHandleLong, h.h.AuthorizeInfo)
-		v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.CaculateCkbaddr)
-		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), cacheHandleShort, h.h.TransactionSend)
-		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), cacheHandleShort, h.h.TransactionStatus)
+		v1.POST("/webauthn/ecdsa-ecrecover", api_code.DoMonitorLog(api_code.MethodEcdsaRecover), h.h.Ecrecover)
+		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog(api_code.MethodGetMasterAddr), h.h.GetMasters)
+		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.Authorize)
+		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.AuthorizeInfo)
+		v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
+		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), h.h.TransactionSend)
+		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.TransactionStatus)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
 	}
