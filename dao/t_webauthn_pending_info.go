@@ -35,6 +35,11 @@ func (d *DbDao) GetTxStatus(chainType common.ChainType, address string, actions 
 	return
 }
 
+func (d *DbDao) GetTxStatusByOutpoint(txHash string) (tx tables.TableWebauthnPendingInfo, err error) {
+	err = d.db.Where(" outpoint = ?", txHash+"-0").First(&tx).Error
+	return
+}
+
 func (d *DbDao) SearchMaybeRejectedPending(timestamp int64) (list []tables.TableWebauthnPendingInfo, err error) {
 	err = d.db.Where(" block_number=0 AND `status`=0 AND block_timestamp<? ", timestamp).Limit(100).Find(&list).Error
 	return

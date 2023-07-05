@@ -31,6 +31,7 @@ type ReqTransactionStatus struct {
 	ChainType common.ChainType  `json:"chain_type"`
 	Address   string            `json:"address"`
 	Actions   []tables.TxAction `json:"actions"`
+	TxHash    string            `json:"tx_hash"`
 }
 
 func (h *HttpHandle) RpcTransactionSend(p json.RawMessage, apiResp *api_code.ApiResp) {
@@ -284,8 +285,14 @@ func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api
 	for _, v := range req.Actions {
 		actionList = append(actionList, tables.FormatActionType(v))
 	}
+	var tx tables.TableWebauthnPendingInfo
+	var err error
+	if req.TxHash != "" {
+		tx, err = h.dbDao.GetTxStatusByOutpoint(req.TxHash)
+	} else {
+		tx, err = h.dbDao.GetTxStatus(req.ChainType, req.Address, actionList)
+	}
 
-	tx, err := h.dbDao.GetTxStatus(req.ChainType, req.Address, actionList)
 	if err != nil && err.Error() != "record not found" {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search tx status err")
 		return fmt.Errorf("GetTransactionStatus err: %s", err.Error())

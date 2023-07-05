@@ -220,11 +220,13 @@ prod api url https://webauthn-api.did.id
 
 * path: /transaction/status
 * param:
+  * tx_hash: if this param is not empty, it will return the transaction of this tx_hash, otherwise the transaction queried based on action and address will be returned
   * actions: business transaction type
     * ActionUpdate_device_key_list TxAction = 30  // withdraw
-
+  * address: address
 ```json
 {
+  "tx_hash":"0x0dc2e55e524a2558cb822d53ae76c8c058c7522602331553a39c7fddf28326ad",
   "actions":[30],
   "chain_type": 8,
   "address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggquyxv8jked54atrex9zwks38g48fy73vdsyqwzrxretvk62743unz38tggn52n5j0gkxcmk8jru"
