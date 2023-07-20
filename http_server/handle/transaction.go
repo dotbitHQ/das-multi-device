@@ -152,6 +152,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			ChainType:     common.ChainTypeWebauthn,
 			AddressNormal: req.SignAddress, //Signed address
 		})
+		fmt.Println("signAddr loginAddr: ", dasAddressHex.AddressHex, sic.Address)
 		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
