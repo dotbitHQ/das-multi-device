@@ -3,12 +3,11 @@ module das-multi-device
 go 1.16
 
 require (
-	github.com/dotbitHQ/das-lib v1.0.2-0.20230625061815-dd1656437155
+	github.com/dotbitHQ/das-lib v1.0.2-0.20230720031810-6d6891074a6d
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gorilla/websocket v1.5.0
-	github.com/jinzhu/gorm v1.9.16
 	github.com/nervosnetwork/ckb-sdk-go v0.101.3
 	github.com/parnurzeal/gorequest v0.2.16
 	github.com/robfig/cron/v3 v3.0.1
