@@ -157,21 +157,25 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 				continue
 			}
 			idx := -1
-			for i := 0; i < int(keyList.Len()); i++ {
-				mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])
-				subAlgId := common.DasSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
-				cid1 := keyList.Get(uint(i)).Cid().RawData()
-				pk1 := keyList.Get(uint(i)).Pubkey().RawData()
-				addressHex := common.Bytes2Hex(append(cid1, pk1...))
-				if dasAddressHex.DasAlgorithmId == mainAlgId &&
-					dasAddressHex.DasSubAlgorithmId == subAlgId &&
-					addressHex == dasAddressHex.AddressHex {
-					idx = i
-					break
+			if dasAddressHex.AddressHex == sic.Address {
+				idx = 255
+			} else {
+				for i := 0; i < int(keyList.Len()); i++ {
+					mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])
+					subAlgId := common.DasSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
+					cid1 := keyList.Get(uint(i)).Cid().RawData()
+					pk1 := keyList.Get(uint(i)).Pubkey().RawData()
+					addressHex := common.Bytes2Hex(append(cid1, pk1...))
+					if dasAddressHex.DasAlgorithmId == mainAlgId &&
+						dasAddressHex.DasSubAlgorithmId == subAlgId &&
+						addressHex == dasAddressHex.AddressHex {
+						idx = i
+						break
+					}
 				}
-			}
-			if idx == -1 {
-				return errors.New("the current signing device is not in the authorized list")
+				if idx == -1 {
+					return errors.New("the current signing device is not in the authorized list")
+				}
 			}
 			signMsg := common.Hex2Bytes(req.SignList[i].SignMsg)
 			idxMolecule := molecule.GoU8ToMoleculeU8(uint8(idx))
