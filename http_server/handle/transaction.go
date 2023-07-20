@@ -158,7 +158,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 				continue
 			}
 			idx := -1
-			if dasAddressHex.AddressHex == sic.Address {
+			if req.SignAddress == sic.Address {
 				idx = 255
 			} else {
 				for i := 0; i < int(keyList.Len()); i++ {
