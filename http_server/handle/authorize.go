@@ -581,7 +581,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 			pk1 := key.Pubkey().AsSlice()
 
 			if masterAddressHex.DasSubAlgorithmId == common.DasSubAlgorithmId(subId) &&
-				masterAddressHex.AddressHex == common.Bytes2Hex(append(cid1, pk1...)) {
+				masterAddressHex.AddressHex == common.Bytes2Hex(cid1) {
 				continue
 			}
 
