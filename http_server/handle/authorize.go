@@ -5,7 +5,6 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
-	"encoding/hex"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
@@ -582,7 +581,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 			pk1 := key.Pubkey().AsSlice()
 
 			if masterAddressHex.DasSubAlgorithmId == common.DasSubAlgorithmId(subId) &&
-				masterAddressHex.AddressHex == hex.EncodeToString(cid1) {
+				masterAddressHex.AddressHex == common.CaculateWebauthnPayload(cid1, pk1) {
 				continue
 			}
 
