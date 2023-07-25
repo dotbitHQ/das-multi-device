@@ -557,7 +557,10 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 	}
 	resp.EnableAuthorize = int(res.EnableAuthorize)
 	resp.CkbAddress = make([]string, 0)
-	fmt.Println("cidpk: ", res)
+	if res.Outpoint == "" {
+		apiResp.ApiRespErr(api_code.ApiCodeError500, "outpoint is empty")
+		return fmt.Errorf("outpoint is empty")
+	}
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
 		outpoint := common.String2OutPointStruct(res.Outpoint)
 		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
