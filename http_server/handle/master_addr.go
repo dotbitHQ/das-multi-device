@@ -65,16 +65,10 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 	authorizes, err := h.dbDao.GetMasters(common.Bytes2Hex(cid1))
 	ckbAddress := make([]string, 0)
 	for _, v := range authorizes {
-		masterCidBytes, err := hex.DecodeString(v.MasterCid)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, err.Error())
-			return err
-		}
-		masterPkBytes, err := hex.DecodeString(v.MasterPk)
-		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, err.Error())
-			return err
-		}
+		masterCidBytes := common.Hex2Bytes(v.MasterCid)
+
+		masterPkBytes := common.Hex2Bytes(v.MasterPk)
+
 		addressNormal, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 			DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
 			DasSubAlgorithmId: common.DasWebauthnSubAlgorithmIdES256,
