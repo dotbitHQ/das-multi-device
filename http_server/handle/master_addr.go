@@ -62,7 +62,7 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 	var resp RespGetMasters
 	cid := req.Cid
 	cid1 := common.CaculateCid1(cid)
-	authorizes, err := h.dbDao.GetMasters(hex.EncodeToString(cid1))
+	authorizes, err := h.dbDao.GetMasters(common.Bytes2Hex(cid1))
 	ckbAddress := make([]string, 0)
 	for _, v := range authorizes {
 		masterCidBytes, err := hex.DecodeString(v.MasterCid)
