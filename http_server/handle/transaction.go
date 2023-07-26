@@ -101,37 +101,6 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		}
 	}
 	if hasWebAuthn {
-		//addHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-		//	ChainType:     common.ChainTypeWebauthn,
-		//	AddressNormal: sic.Address,
-		//})
-		//if err != nil {
-		//	return err
-		//}
-		//webAuthnLockScript, _, err := h.dasCore.Daf().HexToScript(core.DasAddressHex{
-		//	DasAlgorithmId: common.DasAlgorithmIdWebauthn,
-		//	ChainType:      common.ChainTypeWebauthn,
-		//	AddressHex:     sic.Address,
-		//})
-		//keyListConfigCellContract, err := core.GetDasContractInfo(common.DasKeyListCellType)
-		//if err != nil {
-		//	return fmt.Errorf("GetDasContractInfo err: %s", err.Error())
-		//}
-		//searchKey := &indexer.SearchKey{
-		//	Script:     webAuthnLockScript,
-		//	ScriptType: indexer.ScriptTypeLock,
-		//	Filter: &indexer.CellsFilter{
-		//		Script: keyListConfigCellContract.ToScript(webAuthnLockScript.Args),
-		//	},
-		//}
-		//res, err := h.dasCore.Client().GetCells(h.ctx, searchKey, indexer.SearchOrderDesc, 1, "")
-		//if err != nil {
-		//	return fmt.Errorf("GetCells err: %s", err.Error())
-		//}
-		//if len(res.Objects) == 0 {
-		//	return fmt.Errorf("can't find GetCells type: %s", common.DasKeyListCellType)
-		//}
-
 		keyListCfgOutPoint := common.String2OutPointStruct(sic.KeyListCfgCellOpt)
 		keyListConfigTx, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
 		if err != nil {
@@ -214,15 +183,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 		if sic.Address != "" {
 
 			// operate limit
-			//_ = h.rc.SetApiLimit(sic.ChainType, sic.Address, sic.Action)
-			//_ = h.rc.SetAccountLimit(sic.Account, time.Minute*2)
-			//
-			//// cache tx inputs
-			//h.dasCache.AddCellInputByAction("", sic.BuilderTx.Transaction.Inputs)
-			////// pending tx
-			//pending := tables.TableAuthorizeRecord{
-			//
-			//}
+			_ = h.rc.SetApiLimit(sic.ChainType, sic.Address, sic.Action)
 
 			pending := tables.TableWebauthnPendingInfo{
 				Action:         sic.Action,
