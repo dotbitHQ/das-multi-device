@@ -110,7 +110,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 	if realPubkey == nil {
 		return fmt.Errorf("recover faild")
 	}
-	fmt.Println(realPubkey.X.Bytes(), "----", realPubkey.Y.Bytes())
+	fmt.Println("x: ", hex.EncodeToString(realPubkey.X.Bytes()), " ---- ", "y:", hex.EncodeToString(realPubkey.Y.Bytes()))
 
 	normalAddress, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 		DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
