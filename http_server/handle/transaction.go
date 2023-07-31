@@ -4,6 +4,7 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,7 +136,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 					subAlgId := common.DasSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
 					cid1 := keyList.Get(uint(i)).Cid().RawData()
 					pk1 := keyList.Get(uint(i)).Pubkey().RawData()
-					addressHex := common.Bytes2Hex(append(cid1, pk1...))
+					addressHex := hex.EncodeToString(append(cid1, pk1...))
 					if dasAddressHex.DasAlgorithmId == mainAlgId &&
 						dasAddressHex.DasSubAlgorithmId == subAlgId &&
 						addressHex == dasAddressHex.AddressHex {
