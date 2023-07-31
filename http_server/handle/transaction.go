@@ -4,15 +4,12 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/molecule"
 	"github.com/dotbitHQ/das-lib/txbuilder"
-	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/scorpiotzh/toolib"
@@ -103,50 +100,30 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 	}
 	if hasWebAuthn {
 		keyListCfgOutPoint := common.String2OutPointStruct(sic.KeyListCfgCellOpt)
-		keyListConfigTx, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
-		if err != nil {
-			return err
-		}
-		webAuthnKeyListConfigBuilder, err := witness.WebAuthnKeyListDataBuilderFromTx(keyListConfigTx.Transaction, common.DataTypeNew)
-		if err != nil {
-			return err
-		}
-		dataBuilder := webAuthnKeyListConfigBuilder.DeviceKeyListCellData.AsBuilder()
-		deviceKeyListCellDataBuilder := dataBuilder.Build()
-		keyList := deviceKeyListCellDataBuilder.Keys()
-
 		addressFormat := core.DasAddressFormat{
 			DasNetType: config.Cfg.Server.Net,
 		}
-		dasAddressHex, err := addressFormat.NormalToHex(core.DasAddressNormal{
+		signAddressHex, err := addressFormat.NormalToHex(core.DasAddressNormal{
 			ChainType:     common.ChainTypeWebauthn,
 			AddressNormal: req.SignAddress, //Signed address
 		})
-		fmt.Println("signAddr loginAddr: ", dasAddressHex.AddressHex, sic.Address)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "sign address NormalToHex err")
+			return err
+		}
+		idx, err := h.dasCore.GetIdxOfKeylistByOp(keyListCfgOutPoint, signAddressHex)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
+			return err
+		}
+		if idx == -1 {
+			apiResp.ApiRespErr(api_code.ApiCodePermissionDenied, "permission denied")
+			return fmt.Errorf("permission denied")
+		}
+		log.Info("signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
 		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
-			}
-			idx := -1
-			if req.SignAddress == sic.Address {
-				idx = 255
-			} else {
-				for i := 0; i < int(keyList.Len()); i++ {
-					mainAlgId := common.DasAlgorithmId(keyList.Get(uint(i)).MainAlgId().RawData()[0])
-					subAlgId := common.DasSubAlgorithmId(keyList.Get(uint(i)).SubAlgId().RawData()[0])
-					cid1 := keyList.Get(uint(i)).Cid().RawData()
-					pk1 := keyList.Get(uint(i)).Pubkey().RawData()
-					addressHex := hex.EncodeToString(append(cid1, pk1...))
-					if dasAddressHex.DasAlgorithmId == mainAlgId &&
-						dasAddressHex.DasSubAlgorithmId == subAlgId &&
-						addressHex == dasAddressHex.AddressHex {
-						idx = i
-						break
-					}
-				}
-				if idx == -1 {
-					return errors.New("the current signing device is not in the authorized list")
-				}
 			}
 			signMsg := common.Hex2Bytes(req.SignList[i].SignMsg)
 			idxMolecule := molecule.GoU8ToMoleculeU8(uint8(idx))
