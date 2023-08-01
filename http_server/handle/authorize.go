@@ -79,18 +79,17 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
-	fmt.Println("cid1: ", cid1)
+	log.Info("cid1: ", cid1)
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
-	fmt.Println("db outpoint: ", keyListConfigCellOutPoint)
+	log.Info("db outpoint: ", keyListConfigCellOutPoint)
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
-
 		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
 			return nil
@@ -115,7 +114,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return err
 		}
 	}
-	fmt.Println("outpoint: ", keyListConfigCellOutPoint)
+	log.Info("outpoint: ", keyListConfigCellOutPoint)
 	//update keyListConfigCell (add das-lock-key)
 	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
@@ -183,7 +182,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}
 	//capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
-	fmt.Println("res.Transaction.Outputs: ", res.Transaction.Outputs)
+	log.Info("res.Transaction.Outputs: ", res.Transaction.Outputs)
 	if len(res.Transaction.Outputs) == 0 {
 		return nil, fmt.Errorf("KeyListCfgTransaction not exists")
 	}
@@ -201,8 +200,8 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 
 	nowKeyList := witness.ConvertToWebauthnKeyList(builder.DeviceKeyListCellData.Keys())
 	var newKeyList []witness.WebauthnKey
-	fmt.Println("nowKeyList: ", nowKeyList)
-	fmt.Println(webAuthnKey)
+	log.Info("nowKeyList: ", nowKeyList)
+	log.Info("slaveKey: ", webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
 		for _, v := range nowKeyList {
@@ -268,7 +267,6 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	var skipGroups []int
 	switch req.Action {
 	case common.DasActionUpdateKeyList:
-		//TODO 计算手续费
 		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
 		changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
 		txBuilder.Transaction.Outputs[0].Capacity = changeCapacity

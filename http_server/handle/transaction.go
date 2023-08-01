@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
-	"github.com/dotbitHQ/das-lib/molecule"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -125,12 +124,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
 			}
-			signMsg := common.Hex2Bytes(req.SignList[i].SignMsg)
-			idxMolecule := molecule.GoU8ToMoleculeU8(uint8(idx))
-			idxLen := molecule.GoU8ToMoleculeU8(uint8(len(idxMolecule.RawData())))
-			signMsgRes := append(idxLen.RawData(), idxMolecule.RawData()...)
-			signMsgRes = append(signMsgRes, signMsg...)
-			req.SignList[i].SignMsg = common.Bytes2Hex(signMsgRes)
+			h.dasCore.AddPkIndexForSignMsg(&req.SignList[i].SignMsg, idx)
 		}
 	}
 
