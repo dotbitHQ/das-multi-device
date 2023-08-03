@@ -95,17 +95,18 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return nil
 		}
 		//Check if keyListConfigCell can be created
-		if config.Cfg.Server.Net == common.DasNetTypeMainNet {
-			canCreate, err := h.checkCanBeCreated(masterPayloadHex)
-			if err != nil {
-				apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
-				return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
-			}
-			if !canCreate {
-				apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
-				return fmt.Errorf("master_address hasn`t enable authorize")
-			}
+		//todo: 测试环境加上此限制 让大家体验
+		//if config.Cfg.Server.Net == common.DasNetTypeMainNet {
+		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
 		}
+		if !canCreate {
+			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
+			return fmt.Errorf("master_address hasn`t enable authorize")
+		}
+		//}
 
 		//create keyListConfigCell
 		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterPayloadHex)
@@ -124,7 +125,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
 		return err
 	}
-
+	//todo keyListConfigOp keyListConfigOutpoint
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
 		Action:            common.DasActionUpdateKeyList,
 		Operation:         req.Operation,
@@ -204,6 +205,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	log.Info("slaveKey: ", webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
+		//todo 限制最高10个
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
 				return nil, fmt.Errorf("Cannot add repeatedly")
@@ -213,9 +215,9 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		newKeyList = nowKeyList
 	} else { //delete webAuthnKey
 		isExist := false
-		if nowKeyList[0].Cid == webAuthnKey.Cid {
-			return nil, fmt.Errorf("Cannot delete the owner of keylist")
-		}
+		//if nowKeyList[0].Cid == webAuthnKey.Cid {
+		//	return nil, fmt.Errorf("Cannot delete the owner of keylist")
+		//}
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
 				isExist = true

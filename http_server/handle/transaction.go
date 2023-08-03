@@ -1,7 +1,6 @@
 package handle
 
 import (
-	"das-multi-device/config"
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
 	"encoding/json"
@@ -99,10 +98,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 	}
 	if hasWebAuthn {
 		keyListCfgOutPoint := common.String2OutPointStruct(sic.KeyListCfgCellOpt)
-		addressFormat := core.DasAddressFormat{
-			DasNetType: config.Cfg.Server.Net,
-		}
-		signAddressHex, err := addressFormat.NormalToHex(core.DasAddressNormal{
+		signAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 			ChainType:     common.ChainTypeWebauthn,
 			AddressNormal: req.SignAddress, //Signed address
 		})
@@ -126,6 +122,8 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			}
 			h.dasCore.AddPkIndexForSignMsg(&req.SignList[i].SignMsg, idx)
 		}
+	} else {
+		//todo warning 日志
 	}
 
 	// sign

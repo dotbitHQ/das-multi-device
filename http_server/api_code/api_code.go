@@ -56,6 +56,7 @@ const (
 const (
 	MethodEcdsaRecover      = "das_ecdsa_ecrecover"
 	MethodGetMasterAddr     = "das_get_masters_addr"
+	MethodGetOriginPk       = "das_get_origin_pk"
 	MethodAuthorize         = "das_authorize"
 	MethodTransactionSend   = "das_transactionSend"
 	MethodTransactionStatus = "das_transactionStatus"

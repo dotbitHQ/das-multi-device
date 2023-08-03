@@ -22,6 +22,10 @@ type RespGetMasters struct {
 	CkbAddress []string `json:"ckb_address"`
 }
 
+type RespGetOringinPk struct {
+	OriginalPk string `json:"origin_pk"`
+}
+
 type ReqCaculateCkbAddr struct {
 	Cid    string `json:"cid" binding:"required"`
 	Pubkey struct {
@@ -63,6 +67,10 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 	cid := req.Cid
 	cid1 := common.CaculateCid1(cid)
 	authorizes, err := h.dbDao.GetMasters(common.Bytes2Hex(cid1))
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeDbError, "getMaster err")
+		return fmt.Errorf("GetMasters err :%s", err.Error())
+	}
 	ckbAddress := make([]string, 0)
 	for _, v := range authorizes {
 		masterCidBytes := common.Hex2Bytes(v.MasterCid)
@@ -80,6 +88,45 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 		ckbAddress = append(ckbAddress, addressNormal.AddressNormal)
 	}
 	resp.CkbAddress = ckbAddress
+	apiResp.ApiRespOK(resp)
+	return nil
+}
+
+func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
+	var (
+		funcName = "GetOriginalPk"
+		clientIp = GetClientIp(ctx)
+		req      *ReqGetMasters
+		apiResp  api_code.ApiResp
+		err      error
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		ctx.JSON(http.StatusOK, apiResp)
+		return
+	}
+
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+
+	if err = h.doGetOriginalPk(req, &apiResp); err != nil {
+		log.Error("doGetoriginalPk err:", err.Error(), funcName, clientIp)
+	}
+
+	ctx.JSON(http.StatusOK, apiResp)
+}
+
+func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
+	var resp RespGetOringinPk
+	cid := req.Cid
+	cid1 := common.CaculateCid1(cid)
+	cidPk, err := h.dbDao.GetCidPk(common.Bytes2Hex(cid1))
+	if err != nil {
+		apiResp.ApiRespErr(api_code.ApiCodeDbError, "GetCidPk err")
+		return fmt.Errorf("GetMasters err :%s", err.Error())
+	}
+	resp.OriginalPk = cidPk.OriginPk
 	apiResp.ApiRespOK(resp)
 	return nil
 }
