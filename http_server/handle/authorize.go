@@ -510,9 +510,8 @@ type ReqAuthorizeInfo struct {
 	CkbAddress string `json:"ckb_address" binding:"required"`
 }
 type RespAuthorizeInfo struct {
-	CanAuthorize    int      `json:"can_authorize"`
-	EnableAuthorize int      `json:"enable_authorize"`
-	CkbAddress      []string `json:"ckb_address"`
+	CanAuthorize int      `json:"can_authorize"`
+	CkbAddress   []string `json:"ckb_address"`
 }
 
 func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
