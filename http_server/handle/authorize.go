@@ -607,6 +607,8 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 		if canCreate {
 			resp.CanAuthorize = 1
 		}
+	} else {
+		resp.CanAuthorize = 1
 	}
 
 	apiResp.ApiRespOK(resp)
