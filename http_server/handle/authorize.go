@@ -556,7 +556,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "Search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
-	resp.EnableAuthorize = int(res.EnableAuthorize)
+	//resp.EnableAuthorize = int(res.EnableAuthorize)
 	resp.CkbAddress = make([]string, 0)
 
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
@@ -598,7 +598,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 		}
 	}
 
-	if resp.EnableAuthorize == 0 {
+	if res.EnableAuthorize == 0 {
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
