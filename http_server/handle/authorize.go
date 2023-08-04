@@ -510,7 +510,8 @@ type ReqAuthorizeInfo struct {
 	CkbAddress string `json:"ckb_address" binding:"required"`
 }
 type RespAuthorizeInfo struct {
-	EnableAuthorize int      `json:"enable_authorize" binding:"required"`
+	CanAuthorize    int      `json:"can_authorize"`
+	EnableAuthorize int      `json:"enable_authorize"`
 	CkbAddress      []string `json:"ckb_address"`
 }
 
@@ -596,6 +597,18 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 			resp.CkbAddress = append(resp.CkbAddress, addrNormal.AddressNormal)
 		}
 	}
+
+	if resp.EnableAuthorize == 0 {
+		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
+		if err != nil {
+			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
+		}
+		if canCreate {
+			resp.CanAuthorize = 1
+		}
+	}
+
 	apiResp.ApiRespOK(resp)
 	return nil
 }
