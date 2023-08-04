@@ -1,6 +1,7 @@
 * [API LIST](#api-list)
     * [Ecdsa Ecrecover](#ecdsa-ecrecover)
     * [Get Master Addr](#get-masters-addr)
+    * [Get Original Pk](#get-original-pk)
     * [Authorize](#authorize)
     * [Authorize Info](#authorize-info)
     * [Caculate CkbAddr](#caculate-ckbaddr)
@@ -79,6 +80,31 @@ prod api url https://webauthn-api.did.id
   }
 }
 ```
+### Get Original Pk
+
+#### Request
+
+* path: /v1/webauthn/get-original-pk
+* params:
+  * cid: credential id (string, necessary)
+```json
+{
+  "cid": "0e259e88f8e40a1e6ba097acecb342c7b209b058c355442a6b3c5f73bf57fd59"
+}
+```
+
+#### Response
+* origin_pk: the original publicKey (ecdsa P256)
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": {
+    "origin_pk": "0xa6ae565f4a6137a8ed08e33988cbbe24698ea906ec84215ce042e4812c19502f33b03f6bcc027b41f503f2d25de9e346591cbd03aef5ce5826b3151fdc2aec21"
+  }
+}
+```
+
 
 ### Authorize
 
