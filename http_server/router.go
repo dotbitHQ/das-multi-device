@@ -28,7 +28,7 @@ func (h *HttpServer) initRouter() {
 
 		v1.POST("/webauthn/ecdsa-ecrecover", api_code.DoMonitorLog(api_code.MethodEcdsaRecover), h.h.Ecrecover)
 		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog(api_code.MethodGetMasterAddr), h.h.GetMasters)
-		v1.POST("/webauthn/get-oringinal-pk", api_code.DoMonitorLog(api_code.MethodGetOriginPk), h.h.GetOriginalPk)
+		v1.POST("/webauthn/get-original-pk", api_code.DoMonitorLog(api_code.MethodGetOriginPk), h.h.GetOriginalPk)
 		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.Authorize)
 		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.AuthorizeInfo)
 		//v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
