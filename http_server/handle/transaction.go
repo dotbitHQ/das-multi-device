@@ -106,7 +106,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "sign address NormalToHex err")
 			return err
 		}
-		idx, err := h.dasCore.GetIdxOfKeylistByOp(keyListCfgOutPoint, signAddressHex)
+		idx, err := h.dasCore.GetIdxOfKeylistByOutPoint(keyListCfgOutPoint, signAddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
 			return err

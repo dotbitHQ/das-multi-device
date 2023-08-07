@@ -31,7 +31,7 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/webauthn/get-original-pk", api_code.DoMonitorLog(api_code.MethodGetOriginPk), h.h.GetOriginalPk)
 		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.Authorize)
 		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.AuthorizeInfo)
-		//v1.POST("/webauthn/caculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
+		//v1.POST("/webauthn/calculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
 		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), h.h.TransactionSend)
 		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.TransactionStatus)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))

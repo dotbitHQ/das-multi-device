@@ -30,15 +30,15 @@ type RespAuthorize struct {
 }
 
 type reqBuildWebauthnTx struct {
-	Action            common.DasAction
-	Operation         common.WebAuchonKeyOperate
-	ChainType         common.ChainType
-	keyListConfigOp   string
-	KeyListConfigCell *types.CellOutput
-	MasterCkbAddr     string
-	MasterPayLoad     []byte
-	SlavePayload      []byte
-	Capacity          uint64 `json:"capacity"`
+	Action                common.DasAction
+	Operation             common.WebAuchonKeyOperate
+	ChainType             common.ChainType
+	keyListConfigOutPoint string
+	KeyListConfigCell     *types.CellOutput
+	MasterCkbAddr         string
+	MasterPayLoad         []byte
+	SlavePayload          []byte
+	Capacity              uint64 `json:"capacity"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
@@ -94,9 +94,6 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
 			return nil
 		}
-		//Check if keyListConfigCell can be created
-		//todo: 测试环境加上此限制 让大家体验
-		//if config.Cfg.Server.Net == common.DasNetTypeMainNet {
 		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
@@ -106,7 +103,6 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
 			return fmt.Errorf("master_address hasn`t enable authorize")
 		}
-		//}
 
 		//create keyListConfigCell
 		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterPayloadHex)
@@ -125,17 +121,17 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
 		return err
 	}
-	//todo keyListConfigOp keyListConfigOutpoint
+
 	reqBuildWebauthnTx := reqBuildWebauthnTx{
-		Action:            common.DasActionUpdateKeyList,
-		Operation:         req.Operation,
-		ChainType:         common.ChainTypeWebauthn,
-		keyListConfigOp:   keyListConfigCellOutPoint,
-		KeyListConfigCell: keyListConfigCell,
-		MasterCkbAddr:     req.MasterCkbAddress,
-		MasterPayLoad:     masterAddressHex.AddressPayload,
-		SlavePayload:      slaveAddressHex.AddressPayload,
-		Capacity:          0,
+		Action:                common.DasActionUpdateKeyList,
+		Operation:             req.Operation,
+		ChainType:             common.ChainTypeWebauthn,
+		keyListConfigOutPoint: keyListConfigCellOutPoint,
+		KeyListConfigCell:     keyListConfigCell,
+		MasterCkbAddr:         req.MasterCkbAddress,
+		MasterPayLoad:         masterAddressHex.AddressPayload,
+		SlavePayload:          slaveAddressHex.AddressPayload,
+		Capacity:              0,
 	}
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
@@ -167,7 +163,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	}
 
 	// inputs account cell
-	keyListCfgOutPoint := common.String2OutPointStruct(req.keyListConfigOp)
+	keyListCfgOutPoint := common.String2OutPointStruct(req.keyListConfigOutPoint)
 	txParams.Inputs = append(txParams.Inputs, &types.CellInput{
 		PreviousOutput: keyListCfgOutPoint,
 	})
@@ -215,9 +211,6 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		newKeyList = nowKeyList
 	} else { //delete webAuthnKey
 		isExist := false
-		//if nowKeyList[0].Cid == webAuthnKey.Cid {
-		//	return nil, fmt.Errorf("Cannot delete the owner of keylist")
-		//}
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
 				isExist = true
@@ -253,7 +246,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 
 	//if it is a newly created KeyListConfigCell, use it in req
 	if req.KeyListConfigCell != nil {
-		txBuilder.MapInputsCell[req.keyListConfigOp] = &types.CellWithStatus{
+		txBuilder.MapInputsCell[req.keyListConfigOutPoint] = &types.CellWithStatus{
 			Cell: &types.CellInfo{
 				Data:   nil,
 				Output: req.KeyListConfigCell,
@@ -285,7 +278,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
 	sic.Address = req.MasterCkbAddr
-	sic.KeyListCfgCellOpt = req.keyListConfigOp
+	sic.KeyListCfgCellOpt = req.keyListConfigOutPoint
 	sic.Capacity = req.Capacity
 	sic.BuilderTx = txBuilder.DasTxBuilderTransaction
 	signKey := sic.SignKey()
@@ -581,14 +574,14 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.Ap
 			pk1 := key.Pubkey().AsSlice()
 
 			if masterAddressHex.DasSubAlgorithmId == common.DasSubAlgorithmId(subId) &&
-				masterAddressHex.AddressHex == common.CaculateWebauthnPayload(cid1, pk1) {
+				masterAddressHex.AddressHex == common.CalculateWebauthnPayload(cid1, pk1) {
 				continue
 			}
 
 			addrNormal, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 				DasAlgorithmId:    common.DasAlgorithmId(mId),
 				DasSubAlgorithmId: common.DasSubAlgorithmId(subId),
-				AddressHex:        common.CaculateWebauthnPayload(cid1, pk1),
+				AddressHex:        common.CalculateWebauthnPayload(cid1, pk1),
 			})
 			if err != nil {
 				return err

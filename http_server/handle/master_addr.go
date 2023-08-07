@@ -65,7 +65,7 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
 	var resp RespGetMasters
 	cid := req.Cid
-	cid1 := common.CaculateCid1(cid)
+	cid1 := common.CalculateCid1(cid)
 	authorizes, err := h.dbDao.GetMasters(common.Bytes2Hex(cid1))
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "getMaster err")
@@ -80,7 +80,7 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp)
 		addressNormal, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 			DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
 			DasSubAlgorithmId: common.DasWebauthnSubAlgorithmIdES256,
-			AddressHex:        common.CaculateWebauthnPayload(masterCidBytes, masterPkBytes),
+			AddressHex:        common.CalculateWebauthnPayload(masterCidBytes, masterPkBytes),
 		})
 		if err != nil {
 			return err
@@ -120,7 +120,7 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
 	var resp RespGetOringinPk
 	cid := req.Cid
-	cid1 := common.CaculateCid1(cid)
+	cid1 := common.CalculateCid1(cid)
 	cidPk, err := h.dbDao.GetCidPk(common.Bytes2Hex(cid1))
 	if err != nil {
 		apiResp.ApiRespErr(api_code.ApiCodeDbError, "GetCidPk err")

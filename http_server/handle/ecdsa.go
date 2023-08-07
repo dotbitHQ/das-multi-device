@@ -1,7 +1,6 @@
 package handle
 
 import (
-	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
 	"das-multi-device/http_server/api_code"
@@ -63,8 +62,8 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 		return
 	}
 
-	var pubKeys []*ecdsa.PublicKey
 	curve := elliptic.P256()
+	var recoverData [2]common.RecoverData
 	for i := 0; i < 2; i++ {
 		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
 		if err != nil {
@@ -96,19 +95,14 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (
 		if err != nil {
 			return fmt.Errorf("Error asn1 unmarshal signature %s:", err)
 		}
-
-		possiblePubkey, err := common.GetEcdsaPossiblePubkey(curve, hash[:], e.R, e.S)
-		pubKeys = append(pubKeys, possiblePubkey[:]...)
+		recoverData[i].SignDigest = hash[:]
+		recoverData[i].R = e.R
+		recoverData[i].S = e.S
 	}
-
-	var realPubkey *ecdsa.PublicKey
-	for i := 0; i < 2; i++ {
-		if pubKeys[i].Equal(pubKeys[2]) || pubKeys[i].Equal(pubKeys[3]) {
-			realPubkey = pubKeys[i]
-		}
-	}
-	if realPubkey == nil {
-		return fmt.Errorf("recover faild")
+	realPubkey, err := common.EcdsaRecover(curve, recoverData)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	fmt.Println("x: ", hex.EncodeToString(realPubkey.X.Bytes()), " ---- ", "y:", hex.EncodeToString(realPubkey.Y.Bytes()))
 
