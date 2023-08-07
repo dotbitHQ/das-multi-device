@@ -100,7 +100,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
 		}
 		if !canCreate {
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
+			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "the main device does not have permission to activate backup")
 			return fmt.Errorf("the main device does not have permission to activate backup")
 		}
 
@@ -108,7 +108,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterPayloadHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
-			return err
+			return fmt.Errorf("createKeyListCfgCell err: %s", err.Error())
 		}
 	}
 	log.Info("outpoint: ", keyListConfigCellOutPoint)
