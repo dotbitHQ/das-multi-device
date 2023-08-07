@@ -101,7 +101,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		}
 		if !canCreate {
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "master_address has no access to enable authorize")
-			return fmt.Errorf("master_address hasn`t enable authorize")
+			return fmt.Errorf("the main device does not have permission to activate backup")
 		}
 
 		//create keyListConfigCell
