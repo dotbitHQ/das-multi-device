@@ -76,7 +76,6 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
 		return err
 	}
-	masterPayloadHex := common.Bytes2Hex(masterAddressHex.AddressPayload)
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
 	log.Info("cid1: ", cid1)
@@ -94,7 +93,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
 			return nil
 		}
-		canCreate, err := h.checkCanBeCreated(masterPayloadHex)
+		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
 			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
@@ -105,7 +104,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (
 		}
 
 		//create keyListConfigCell
-		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterPayloadHex)
+		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterAddressHex.AddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
 			return fmt.Errorf("createKeyListCfgCell err: %s", err.Error())
