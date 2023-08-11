@@ -200,7 +200,10 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	log.Info("slaveKey: ", webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
-		//todo 限制最高10个
+		if len(nowKeyList) > 9 {
+			return nil, fmt.Errorf("Backup devices cannot exceed 10")
+		}
+
 		for _, v := range nowKeyList {
 			if v.Cid == webAuthnKey.Cid && v.PubKey == webAuthnKey.PubKey {
 				return nil, fmt.Errorf("Cannot add repeatedly")
@@ -508,7 +511,7 @@ type RespAuthorizeInfo struct {
 
 func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 	var (
-		funcName = "IfEnableAuthorize"
+		funcName = "AuthorizeInfo"
 		clientIp = GetClientIp(ctx)
 		req      *ReqAuthorizeInfo
 		apiResp  http_api.ApiResp

@@ -131,9 +131,9 @@ func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *http_api.ApiRe
 	return nil
 }
 
-func (h *HttpHandle) CaculateCkbaddr(ctx *gin.Context) {
+func (h *HttpHandle) CalculateCkbaddr(ctx *gin.Context) {
 	var (
-		funcName = "CaculateCkbaddr"
+		funcName = "CalculateCkbaddr"
 		clientIp = GetClientIp(ctx)
 		req      *ReqCaculateCkbAddr
 		apiResp  http_api.ApiResp
@@ -149,14 +149,14 @@ func (h *HttpHandle) CaculateCkbaddr(ctx *gin.Context) {
 
 	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
-	if err = h.doCaculateCkbAddr(req, &apiResp); err != nil {
+	if err = h.doCalculateCkbAddr(req, &apiResp); err != nil {
 		log.Error("doGetMasters err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doCaculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doCalculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *http_api.ApiResp) (err error) {
 	var resp RespCaculateCkbAddr
 	curve := elliptic.P256()
 	pubkey := new(ecdsa.PublicKey)

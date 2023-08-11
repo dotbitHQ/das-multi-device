@@ -31,7 +31,7 @@ type RespEcrecover struct {
 
 func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 	var (
-		funcName = "ReportBusinessProcess"
+		funcName = "Ecrecover"
 		clientIp = GetClientIp(ctx)
 		req      *ReqEcrecover
 		apiResp  http_api.ApiResp
