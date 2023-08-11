@@ -3,6 +3,7 @@ package example
 import (
 	"das-multi-device/http_server/api_code"
 	"fmt"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/parnurzeal/gorequest"
 )
 
@@ -11,7 +12,7 @@ const (
 )
 
 func doReq(url string, req, data interface{}) error {
-	var resp api_code.ApiResp
+	var resp http_api.ApiResp
 	resp.Data = &data
 	_, _, errs := gorequest.New().Post(url).SendStruct(&req).EndStruct(&resp)
 	if errs != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/dascache"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
@@ -64,7 +65,7 @@ func GetClientIp(ctx *gin.Context) string {
 	return fmt.Sprintf("(%s)(%s)", clientIP, ctx.Request.RemoteAddr)
 }
 
-func (h *HttpHandle) checkSystemUpgrade(apiResp *api_code.ApiResp) error {
+func (h *HttpHandle) checkSystemUpgrade(apiResp *http_api.ApiResp) error {
 	if config.Cfg.Server.IsUpdate {
 		apiResp.ApiRespErr(api_code.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
 		return fmt.Errorf("backend system upgrade")
@@ -98,7 +99,7 @@ func checkChainType(chainType common.ChainType) bool {
 	return false
 }
 
-func checkBalanceErr(err error, apiResp *api_code.ApiResp) {
+func checkBalanceErr(err error, apiResp *http_api.ApiResp) {
 	if err == core.ErrRejectedOutPoint {
 		apiResp.ApiRespErr(api_code.ApiCodeRejectedOutPoint, err.Error())
 	} else if err == core.ErrNotEnoughChange {

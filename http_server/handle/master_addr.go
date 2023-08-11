@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
 	"math/big"
@@ -42,7 +43,7 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 		funcName = "GetMasters"
 		clientIp = GetClientIp(ctx)
 		req      *ReqGetMasters
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -62,7 +63,7 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
 	var resp RespGetMasters
 	cid := req.Cid
 	cid1 := common.CalculateCid1(cid)
@@ -97,7 +98,7 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 		funcName = "GetOriginalPk"
 		clientIp = GetClientIp(ctx)
 		req      *ReqGetMasters
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -117,7 +118,7 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
 	var resp RespGetOringinPk
 	cid := req.Cid
 	cid1 := common.CalculateCid1(cid)
@@ -136,7 +137,7 @@ func (h *HttpHandle) CaculateCkbaddr(ctx *gin.Context) {
 		funcName = "CaculateCkbaddr"
 		clientIp = GetClientIp(ctx)
 		req      *ReqCaculateCkbAddr
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -156,7 +157,7 @@ func (h *HttpHandle) CaculateCkbaddr(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doCaculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doCaculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *http_api.ApiResp) (err error) {
 	var resp RespCaculateCkbAddr
 	curve := elliptic.P256()
 	pubkey := new(ecdsa.PublicKey)

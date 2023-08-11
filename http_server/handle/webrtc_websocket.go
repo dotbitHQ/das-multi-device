@@ -2,6 +2,7 @@ package handle
 
 import (
 	"das-multi-device/http_server/api_code"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"sync"
@@ -26,7 +27,7 @@ var PeersMap = map[string]*websocket.Conn{}
 var Conn2Cid = map[*websocket.Conn]string{}
 
 func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
-	apiResp := api_code.ApiResp{}
+	apiResp := http_api.ApiResp{}
 	conn, err := upGrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		log.Error("websocket Upgrader err:", err.Error())

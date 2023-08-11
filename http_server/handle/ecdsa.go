@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
 	"math/big"
@@ -34,7 +35,7 @@ func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 		funcName = "ReportBusinessProcess"
 		clientIp = GetClientIp(ctx)
 		req      *ReqEcrecover
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -54,7 +55,7 @@ func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (err error) {
 	var resp RespEcrecover
 	signData := req.SignData
 	if len(signData) < 2 {

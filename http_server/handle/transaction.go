@@ -1,12 +1,12 @@
 package handle
 
 import (
-	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
 	"encoding/json"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -30,16 +30,16 @@ type ReqTransactionStatus struct {
 	TxHash    string            `json:"tx_hash"`
 }
 
-func (h *HttpHandle) RpcTransactionSend(p json.RawMessage, apiResp *api_code.ApiResp) {
+func (h *HttpHandle) RpcTransactionSend(p json.RawMessage, apiResp *http_api.ApiResp) {
 	var req []ReqTransactionSend
 	err := json.Unmarshal(p, &req)
 	if err != nil {
 		log.Error("json.Unmarshal err:", err.Error())
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return
 	} else if len(req) == 0 {
 		log.Error("len(req) is 0")
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return
 	}
 
@@ -53,13 +53,13 @@ func (h *HttpHandle) TransactionSend(ctx *gin.Context) {
 		funcName = "TransactionSend"
 		clientIp = GetClientIp(ctx)
 		req      ReqTransactionSend
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -72,20 +72,20 @@ func (h *HttpHandle) TransactionSend(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_code.ApiResp) error {
+func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_api.ApiResp) error {
 	var resp RespTransactionSend
 
 	var sic SignInfoCache
 	// get tx by cache
 	if txStr, err := h.rc.GetSignTxCache(req.SignKey); err != nil {
 		if err == redis.Nil {
-			apiResp.ApiRespErr(api_code.ApiCodeTxExpired, "tx expired err")
+			apiResp.ApiRespErr(http_api.ApiCodeTxExpired, "tx expired err")
 		} else {
-			apiResp.ApiRespErr(api_code.ApiCodeCacheError, "cache err")
+			apiResp.ApiRespErr(http_api.ApiCodeCacheError, "cache err")
 		}
 		return fmt.Errorf("GetSignTxCache err: %s", err.Error())
 	} else if err = json.Unmarshal([]byte(txStr), &sic); err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "json.Unmarshal err")
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "json.Unmarshal err")
 		return fmt.Errorf("json.Unmarshal err: %s", err.Error())
 	}
 
@@ -103,16 +103,16 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			AddressNormal: req.SignAddress, //Signed address
 		})
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "sign address NormalToHex err")
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
 			return err
 		}
 		idx, err := h.dasCore.GetIdxOfKeylistByOutPoint(keyListCfgOutPoint, signAddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
 			return err
 		}
 		if idx == -1 {
-			apiResp.ApiRespErr(api_code.ApiCodePermissionDenied, "permission denied")
+			apiResp.ApiRespErr(http_api.ApiCodePermissionDenied, "permission denied")
 			return fmt.Errorf("permission denied")
 		}
 		log.Info("signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
@@ -129,7 +129,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 	// sign
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, sic.BuilderTx)
 	if err := txBuilder.AddSignatureForTx(req.SignList); err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "add signature fail")
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "add signature fail")
 		return fmt.Errorf("AddSignatureForTx err: %s", err.Error())
 	}
 
@@ -139,14 +139,14 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *api_cod
 			strings.Contains(err.Error(), "Dead(OutPoint(") ||
 			strings.Contains(err.Error(), "Unknown(OutPoint(") ||
 			(strings.Contains(err.Error(), "getInputCell") && strings.Contains(err.Error(), "not live")) {
-			apiResp.ApiRespErr(api_code.ApiCodeRejectedOutPoint, err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeRejectedOutPoint, err.Error())
 			return fmt.Errorf("SendTransaction err: %s", err.Error())
 		}
 		if strings.Contains(err.Error(), "-102 in the page") {
-			apiResp.ApiRespErr(api_code.ApiCodeOperationFrequent, "account frequency limit")
+			apiResp.ApiRespErr(http_api.ApiCodeOperationFrequent, "account frequency limit")
 			return fmt.Errorf("SendTransaction err: %s", err.Error())
 		}
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "send tx err:"+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "send tx err:"+err.Error())
 		return fmt.Errorf("SendTransaction err: %s", err.Error())
 	} else {
 		resp.Hash = hash.Hex()
@@ -178,13 +178,13 @@ func (h *HttpHandle) TransactionStatus(ctx *gin.Context) {
 		funcName = "TransactionStatus"
 		clientIp = GetClientIp(ctx)
 		req      ReqTransactionStatus
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -204,14 +204,14 @@ type RespTransactionStatus struct {
 	Status      int             `json:"status"`
 }
 
-func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api_code.ApiResp) error {
+func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *http_api.ApiResp) error {
 	//addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 	//	ChainType:     req.ChainType,
 	//	AddressNormal: req.Address,
 	//	Is712:         true,
 	//})
 	//if err != nil {
-	//	apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "address NormalToHex err")
+	//	apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "address NormalToHex err")
 	//	return fmt.Errorf("NormalToHex err: %s", err.Error())
 	//}
 	//req.ChainType, req.Address = addressHex.ChainType, addressHex.AddressHex
@@ -230,11 +230,11 @@ func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *api
 	}
 
 	if err != nil && err.Error() != "record not found" {
-		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search tx status err")
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "search tx status err")
 		return fmt.Errorf("GetTransactionStatus err: %s", err.Error())
 	}
 	if tx.Id == 0 {
-		apiResp.ApiRespErr(api_code.ApiCodeTransactionNotExist, "not exits tx")
+		apiResp.ApiRespErr(http_api.ApiCodeTransactionNotExist, "not exits tx")
 		return nil
 	}
 	resp.BlockNumber = tx.BlockNumber

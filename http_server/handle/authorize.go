@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/dotbitHQ/das-lib/molecule"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/dotbitHQ/das-lib/witness"
@@ -46,7 +47,7 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 		funcName = "Authorize"
 		clientIp = GetClientIp(ctx)
 		req      ReqAuthorize
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -65,7 +66,7 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (err error) {
 	var resp RespAuthorize
 	var keyListConfigCellOutPoint string
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
@@ -511,7 +512,7 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 		funcName = "IfEnableAuthorize"
 		clientIp = GetClientIp(ctx)
 		req      *ReqAuthorizeInfo
-		apiResp  api_code.ApiResp
+		apiResp  http_api.ApiResp
 		err      error
 	)
 
@@ -531,7 +532,7 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *api_code.ApiResp) (err error) {
+func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.ApiResp) (err error) {
 	var resp RespAuthorizeInfo
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,

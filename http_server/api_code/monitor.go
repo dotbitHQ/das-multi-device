@@ -5,6 +5,7 @@ import (
 	"das-multi-device/config"
 	"encoding/json"
 	"fmt"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/parnurzeal/gorequest"
 	"github.com/scorpiotzh/mylog"
@@ -48,7 +49,7 @@ func DoMonitorLog(method string) gin.HandlerFunc {
 		statusCode := ctx.Writer.Status()
 
 		if statusCode == http.StatusOK && blw.body.String() != "" {
-			var resp ApiResp
+			var resp http_api.ApiResp
 			if err := json.Unmarshal(blw.body.Bytes(), &resp); err == nil {
 				if resp.ErrNo != ApiCodeSuccess {
 					log.Warn("DoMonitorLog:", method, resp.ErrNo, resp.ErrMsg)
@@ -74,7 +75,7 @@ func DoMonitorLog(method string) gin.HandlerFunc {
 	}
 }
 
-func DoMonitorLogRpc(apiResp *ApiResp, method, clientIp string, startTime time.Time) {
+func DoMonitorLogRpc(apiResp *http_api.ApiResp, method, clientIp string, startTime time.Time) {
 	pushLog := ReqPushLog{
 		Index:   config.Cfg.Server.PushLogIndex,
 		Method:  method,
