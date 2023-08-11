@@ -1,7 +1,6 @@
 package handle
 
 import (
-	"das-multi-device/http_server/api_code"
 	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -31,7 +30,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 	conn, err := upGrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		log.Error("websocket Upgrader err:", err.Error())
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "websocket Upgrader error")
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "websocket Upgrader error")
 		return
 	}
 	exist := make(chan struct{})

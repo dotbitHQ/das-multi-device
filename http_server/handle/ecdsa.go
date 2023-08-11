@@ -3,7 +3,6 @@ package handle
 import (
 	"crypto/elliptic"
 	"crypto/sha256"
-	"das-multi-device/http_server/api_code"
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
@@ -41,7 +40,7 @@ func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -59,7 +58,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (
 	var resp RespEcrecover
 	signData := req.SignData
 	if len(signData) < 2 {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Webauthn sign data must exceed 2")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "Webauthn sign data must exceed 2")
 		return
 	}
 
@@ -68,12 +67,12 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (
 	for i := 0; i < 2; i++ {
 		authenticatorData, err := hex.DecodeString(signData[i].AuthenticatorData)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "AuthenticatorData  error")
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "AuthenticatorData  error")
 			return fmt.Errorf("AuthenticatorData is error : %s", signData[i].AuthenticatorData)
 		}
 		clientDataJson, err := hex.DecodeString(signData[i].ClientDataJson)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "ClientDataJson  error")
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "ClientDataJson  error")
 			return fmt.Errorf("ClientDataJson is error : %s", signData[i].ClientDataJson)
 		}
 		clientDataJsonHash := sha256.Sum256(clientDataJson)
@@ -86,7 +85,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (
 
 		signature, err := hex.DecodeString(signData[i].Signature)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "Signature  error")
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "Signature  error")
 			return fmt.Errorf("signature is error : %s", signData[i].Signature)
 		}
 

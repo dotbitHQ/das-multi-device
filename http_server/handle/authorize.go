@@ -3,7 +3,6 @@ package handle
 import (
 	"das-multi-device/cache"
 	"das-multi-device/config"
-	"das-multi-device/http_server/api_code"
 	"das-multi-device/tables"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
@@ -53,7 +52,7 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -74,7 +73,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		AddressNormal: req.MasterCkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return err
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
@@ -82,7 +81,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 	log.Info("cid1: ", cid1)
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeDbError, "search cidpk err")
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
@@ -91,23 +90,23 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
 		if req.Operation == common.DeleteWebAuthnKey { //delete from keyList
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
+			apiResp.ApiRespErr(http_api.ApiCodeHasNoAccessToRemove, "master addr hasn`t enable authorze yet")
 			return nil
 		}
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "check if can be created err")
 			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
 		}
 		if !canCreate {
-			apiResp.ApiRespErr(api_code.ApiCodeHasNoAccessToCreate, "the main device does not have permission to activate backup")
+			apiResp.ApiRespErr(http_api.ApiCodeHasNoAccessToCreate, "the main device does not have permission to activate backup")
 			return fmt.Errorf("the main device does not have permission to activate backup")
 		}
 
 		//create keyListConfigCell
 		keyListConfigCellOutPoint, keyListConfigCell, err = h.createKeyListCfgCell(masterAddressHex.AddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
+			apiResp.ApiRespErr(http_api.ApiCodeCreateConfigCellFail, "create keyListConfigCell err")
 			return fmt.Errorf("createKeyListCfgCell err: %s", err.Error())
 		}
 	}
@@ -118,7 +117,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		AddressNormal: req.SlaveCkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return err
 	}
 
@@ -136,11 +135,11 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "build tx err: "+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "build tx err: "+err.Error())
 		return fmt.Errorf("buildAddAuthorizeTx err: %s", err.Error())
 	}
 	if si, err := h.buildWebauthnTx(&reqBuildWebauthnTx, txParams); err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, "buildWebauthnTx tx err: "+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "buildWebauthnTx tx err: "+err.Error())
 		return fmt.Errorf("buildWebauthnTx: %s", err.Error())
 	} else {
 		resp.SignInfo = *si
@@ -518,7 +517,7 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -539,13 +538,13 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		AddressNormal: req.CkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return err
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeDbError, "Search cidpk err")
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "Search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	//resp.EnableAuthorize = int(res.EnableAuthorize)
@@ -553,7 +552,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
 		if res.Outpoint == "" {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "outpoint is empty")
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "outpoint is empty")
 			return fmt.Errorf("outpoint is empty")
 		}
 		outpoint := common.String2OutPointStruct(res.Outpoint)
@@ -593,7 +592,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 	if res.EnableAuthorize == 0 {
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(api_code.ApiCodeError500, "check if can be created err")
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "check if can be created err")
 			return fmt.Errorf("checkCanBeCreated err : %s", err.Error())
 		}
 		if canCreate {

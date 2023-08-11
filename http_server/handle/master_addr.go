@@ -3,7 +3,6 @@ package handle
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"das-multi-device/http_server/api_code"
 	"encoding/hex"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
@@ -49,7 +48,7 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -69,7 +68,7 @@ func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *http_api.ApiResp)
 	cid1 := common.CalculateCid1(cid)
 	authorizes, err := h.dbDao.GetMasters(common.Bytes2Hex(cid1))
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeDbError, "getMaster err")
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "getMaster err")
 		return fmt.Errorf("GetMasters err :%s", err.Error())
 	}
 	ckbAddress := make([]string, 0)
@@ -104,7 +103,7 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -124,7 +123,7 @@ func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *http_api.ApiRe
 	cid1 := common.CalculateCid1(cid)
 	cidPk, err := h.dbDao.GetCidPk(common.Bytes2Hex(cid1))
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeDbError, "GetCidPk err")
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "GetCidPk err")
 		return fmt.Errorf("GetMasters err :%s", err.Error())
 	}
 	resp.OriginalPk = cidPk.OriginPk
@@ -143,7 +142,7 @@ func (h *HttpHandle) CaculateCkbaddr(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, "params invalid")
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
@@ -164,12 +163,12 @@ func (h *HttpHandle) doCaculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *http_ap
 	pubkey.Curve = curve
 	xBytes, err := hex.DecodeString(req.Pubkey.X)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
 		return err
 	}
 	yBytes, err := hex.DecodeString(req.Pubkey.Y)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeParamsInvalid, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
 		return err
 	}
 	pubkey.X = new(big.Int).SetBytes(xBytes)

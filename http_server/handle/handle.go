@@ -5,7 +5,6 @@ import (
 	"das-multi-device/cache"
 	"das-multi-device/config"
 	"das-multi-device/dao"
-	"das-multi-device/http_server/api_code"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
@@ -67,25 +66,25 @@ func GetClientIp(ctx *gin.Context) string {
 
 func (h *HttpHandle) checkSystemUpgrade(apiResp *http_api.ApiResp) error {
 	if config.Cfg.Server.IsUpdate {
-		apiResp.ApiRespErr(api_code.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
+		apiResp.ApiRespErr(http_api.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
 		return fmt.Errorf("backend system upgrade")
 	}
 	ConfigCellDataBuilder, err := h.dasCore.ConfigCellDataBuilderByTypeArgs(common.ConfigCellTypeArgsMain)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return fmt.Errorf("ConfigCellDataBuilderByTypeArgs err: %s", err.Error())
 	}
 	status, _ := ConfigCellDataBuilder.Status()
 	if status != 1 {
-		apiResp.ApiRespErr(api_code.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
+		apiResp.ApiRespErr(http_api.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
 		return fmt.Errorf("contract system upgrade")
 	}
 	ok, err := h.dasCore.CheckContractStatusOK(common.DasContractNameAccountCellType)
 	if err != nil {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return fmt.Errorf("CheckContractStatusOK err: %s", err.Error())
 	} else if !ok {
-		apiResp.ApiRespErr(api_code.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
+		apiResp.ApiRespErr(http_api.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
 		return fmt.Errorf("contract system upgrade")
 	}
 	return nil
@@ -101,12 +100,12 @@ func checkChainType(chainType common.ChainType) bool {
 
 func checkBalanceErr(err error, apiResp *http_api.ApiResp) {
 	if err == core.ErrRejectedOutPoint {
-		apiResp.ApiRespErr(api_code.ApiCodeRejectedOutPoint, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeRejectedOutPoint, err.Error())
 	} else if err == core.ErrNotEnoughChange {
-		apiResp.ApiRespErr(api_code.ApiCodeNotEnoughChange, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeNotEnoughChange, err.Error())
 	} else if err == core.ErrInsufficientFunds {
-		apiResp.ApiRespErr(api_code.ApiCodeInsufficientBalance, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeInsufficientBalance, err.Error())
 	} else {
-		apiResp.ApiRespErr(api_code.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 	}
 }

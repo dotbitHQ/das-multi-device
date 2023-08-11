@@ -5,6 +5,7 @@ import (
 	"das-multi-device/http_server/api_code"
 	"das-multi-device/http_server/webrtc"
 	"encoding/json"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
 	"net/http"
@@ -26,14 +27,14 @@ func (h *HttpServer) initRouter() {
 		//cacheHandleShort := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, shortDataTime, lockTime, shortExpireTime, respHandle)
 		//cacheHandleLong := toolib.MiddlewareCacheByRedis(h.rc.GetRedisClient(), false, longDataTime, lockTime, longExpireTime, respHandle)
 
-		v1.POST("/webauthn/ecdsa-ecrecover", api_code.DoMonitorLog(api_code.MethodEcdsaRecover), h.h.Ecrecover)
-		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog(api_code.MethodGetMasterAddr), h.h.GetMasters)
-		v1.POST("/webauthn/get-original-pk", api_code.DoMonitorLog(api_code.MethodGetOriginPk), h.h.GetOriginalPk)
-		v1.POST("/webauthn/authorize", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.Authorize)
-		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog(api_code.MethodAuthorize), h.h.AuthorizeInfo)
+		v1.POST("/webauthn/ecdsa-ecrecover", api_code.DoMonitorLog("ecdsa-ecrecover"), h.h.Ecrecover)
+		v1.POST("/webauthn/get-masters-addr", api_code.DoMonitorLog("get-masters-addr"), h.h.GetMasters)
+		v1.POST("/webauthn/get-original-pk", api_code.DoMonitorLog("get-original-pk"), h.h.GetOriginalPk)
+		v1.POST("/webauthn/authorize", api_code.DoMonitorLog("authorize"), h.h.Authorize)
+		v1.POST("/webauthn/authorize-info", api_code.DoMonitorLog("authorize-info"), h.h.AuthorizeInfo)
 		//v1.POST("/webauthn/calculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
-		v1.POST("/transaction/send", api_code.DoMonitorLog(api_code.MethodTransactionSend), h.h.TransactionSend)
-		v1.POST("/transaction/status", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.TransactionStatus)
+		v1.POST("/transaction/send", api_code.DoMonitorLog("transaction-send"), h.h.TransactionSend)
+		v1.POST("/transaction/status", api_code.DoMonitorLog("transaction-status"), h.h.TransactionStatus)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
 	}
@@ -43,7 +44,7 @@ func (h *HttpServer) initRouter() {
 func respHandle(c *gin.Context, res string, err error) {
 	if err != nil {
 		log.Error("respHandle err:", err.Error())
-		c.AbortWithStatusJSON(http.StatusOK, api_code.ApiRespErr(http.StatusInternalServerError, err.Error()))
+		c.AbortWithStatusJSON(http.StatusOK, http_api.ApiRespErr(http.StatusInternalServerError, err.Error()))
 	} else if res != "" {
 		var respMap map[string]interface{}
 		_ = json.Unmarshal([]byte(res), &respMap)

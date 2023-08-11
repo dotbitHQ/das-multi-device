@@ -1,7 +1,6 @@
 package example
 
 import (
-	"das-multi-device/http_server/api_code"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/parnurzeal/gorequest"
@@ -18,7 +17,7 @@ func doReq(url string, req, data interface{}) error {
 	if errs != nil {
 		return fmt.Errorf("%v", errs)
 	}
-	if resp.ErrNo != api_code.ApiCodeSuccess {
+	if resp.ErrNo != http_api.ApiCodeSuccess {
 		return fmt.Errorf("%d - %s", resp.ErrNo, resp.ErrMsg)
 	}
 	return nil

@@ -51,7 +51,7 @@ func DoMonitorLog(method string) gin.HandlerFunc {
 		if statusCode == http.StatusOK && blw.body.String() != "" {
 			var resp http_api.ApiResp
 			if err := json.Unmarshal(blw.body.Bytes(), &resp); err == nil {
-				if resp.ErrNo != ApiCodeSuccess {
+				if resp.ErrNo != http_api.ApiCodeSuccess {
 					log.Warn("DoMonitorLog:", method, resp.ErrNo, resp.ErrMsg)
 				}
 				//if method == MethodTransactionStatus && resp.ErrNo == ApiCodeTransactionNotExist {
@@ -84,7 +84,7 @@ func DoMonitorLogRpc(apiResp *http_api.ApiResp, method, clientIp string, startTi
 		ErrMsg:  apiResp.ErrMsg,
 		ErrNo:   apiResp.ErrNo,
 	}
-	if apiResp.ErrNo != ApiCodeSuccess {
+	if apiResp.ErrNo != http_api.ApiCodeSuccess {
 		log.Warn("DoMonitorLog:", method, apiResp.ErrNo, apiResp.ErrMsg)
 	}
 	PushLog(config.Cfg.Server.PushLogUrl, pushLog)
