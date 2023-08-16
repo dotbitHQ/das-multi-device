@@ -480,7 +480,7 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 		if config.Cfg.Server.SplitCkb > 0 {
 			splitCkb = config.Cfg.Server.SplitCkb * common.OneCkb
 		}
-		changeList, err := core.SplitOutputCell2(change, splitCkb, 200, h.serverScript, nil, indexer.SearchOrderAsc)
+		changeList, err := core.SplitOutputCell2(change, splitCkb, 30, h.serverScript, nil, indexer.SearchOrderAsc)
 		if err != nil {
 			return nil, fmt.Errorf("SplitOutputCell2 err: %s", err.Error())
 		}
