@@ -93,6 +93,7 @@ type CfgServer struct {
 		} `json:"redis" yaml:"redis"`
 	} `json:"cache" yaml:"cache"`
 	SuspendMap map[string]string `json:"suspend_map" yaml:"suspend_map"`
+	OldCid     map[string]string `json:"old_cid" yaml:"old_cid"`
 }
 
 type Server struct {

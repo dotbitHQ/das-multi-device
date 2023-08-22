@@ -35,6 +35,8 @@ func (h *HttpServer) initRouter() {
 		//v1.POST("/webauthn/calculate-ckbaddr", api_code.DoMonitorLog(api_code.MethodTransactionStatus), h.h.CaculateCkbaddr)
 		v1.POST("/transaction/send", api_code.DoMonitorLog("transaction-send"), h.h.TransactionSend)
 		v1.POST("/transaction/status", api_code.DoMonitorLog("transaction-status"), h.h.TransactionStatus)
+		v1.POST("/webauthn/query-cid", api_code.DoMonitorLog("query-cid"), h.h.QueryCid)
+		v1.POST("/webauthn/cid-info", api_code.DoMonitorLog("cid-info"), h.h.CidInfo)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
 	}

@@ -12,3 +12,13 @@ func (d *DbDao) GetAccountInfos(payload string) (num int64, err error) {
 	err = d.parserDb.Model(tables.TableAccountInfo{}).Where("owner = ? or manager = ?", payload, payload).Count(&num).Error
 	return
 }
+
+func (d *DbDao) GetAccountInfoByCid(cid string) (num int64, err error) {
+	err = d.parserDb.Model(tables.TableAccountInfo{}).Where("owner like ? ", "%"+cid+"%").Count(&num).Error
+	return
+}
+
+func (d *DbDao) GetAccountInfoByAccount(account string) (acc tables.TableAccountInfo, err error) {
+	err = d.parserDb.Where("`account`= ? ", account).Find(&acc).Error
+	return
+}
