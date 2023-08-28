@@ -288,7 +288,7 @@ func (h *HttpHandle) doCoverCid(req *ReqCoverCid, apiResp *http_api.ApiResp) (er
 }
 
 func (h *HttpHandle) getOldCid() (oldCids []OldCid, err error) {
-	oldCidPath := "./config/old_cid.json"
+	oldCidPath := "./conf/old_cid.json"
 	file, err := ioutil.ReadFile(oldCidPath)
 	if err != nil {
 		log.Fatalf("Some error occured while reading file. Error: %s", err)
@@ -302,7 +302,7 @@ func (h *HttpHandle) getOldCid() (oldCids []OldCid, err error) {
 	return
 }
 func (h *HttpHandle) updateOldCid(content string) (err error) {
-	oldCidPath := "./config/old_cid.json"
+	oldCidPath := "./conf/old_cid.json"
 	err = ioutil.WriteFile(oldCidPath, []byte(content), 0644)
 	return
 }
