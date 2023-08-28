@@ -294,10 +294,10 @@ prod api url https://webauthn-api.did.id
   * master_addr: login ckb address
   * backup_addr: sign ckb address
   * msg: sign msg
-  * signature：
-  LV format: webauthn.get() signature, authnticatorData, clientDataJSON Splice the three fields according to the following rules
-  len(signature) + signature + len(pubkey) + pubkey + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
-  len(signature) 1byte，len(pubkey) 1byte，len(authnticatorData)为1byte，len(clientDataJSON)为2byte（Little Endian）
+  * signature： 
+    * LV format: webauthn.get() signature, authnticatorData, clientDataJSON Splice the three fields according to the following rules
+    * len(signature) + signature + len(pubkey) + pubkey + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
+    * len(signature) 1byte，len(pubkey) 1byte，len(authnticatorData)为1byte，len(clientDataJSON)为2byte（Little Endian）
 ```json
 {
   "master_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggq7w79h22yxg9h5r3vdw79yhka5vqn48t9yyq080zm49zryzm6pckxh0zjtmw6xqf6n4jj9r9323",
@@ -308,7 +308,7 @@ prod api url https://webauthn-api.did.id
 ```
 
 #### Response
-* is_valid: sign verify result 
+* is_valid: bool, verify result 
 ```json
 {
   "err_no": 0,
