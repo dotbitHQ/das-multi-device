@@ -37,6 +37,7 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/transaction/status", api_code.DoMonitorLog("transaction-status"), h.h.TransactionStatus)
 		v1.POST("/webauthn/query-cid", api_code.DoMonitorLog("query-cid"), h.h.QueryCid)
 		v1.POST("/webauthn/cid-info", api_code.DoMonitorLog("cid-info"), h.h.CidInfo)
+		v1.POST("/webauthn/verify", api_code.DoMonitorLog("cid-info"), h.h.VerifyWebauthnSign)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
 	}

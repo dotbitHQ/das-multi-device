@@ -119,3 +119,84 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (
 	apiResp.ApiRespOK(resp)
 	return nil
 }
+
+type ReqVerify struct {
+	MasterAddr string `json:"master_addr" binding:"required"`
+	BackupAddr string `json:"backup_addr" binding:"required"`
+	Msg        string `json:"msg" binding:"required"`
+	Signature  string `json:"signature" binding:"required"`
+}
+type RepVerify struct {
+	IsValid bool `json:"is_valid"`
+}
+
+func (h *HttpHandle) VerifyWebauthnSign(ctx *gin.Context) {
+	var (
+		funcName = "VerifyWebauthnSign"
+		clientIp = GetClientIp(ctx)
+		req      *ReqVerify
+		apiResp  http_api.ApiResp
+		err      error
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
+		ctx.JSON(http.StatusOK, apiResp)
+		return
+	}
+
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+
+	if err = h.doVerifyWebauthnSign(req, &apiResp); err != nil {
+		log.Error("doVerifyWebauthnSign err:", err.Error(), funcName, clientIp)
+	}
+
+	ctx.JSON(http.StatusOK, apiResp)
+}
+
+func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiResp) (err error) {
+	var resp RepVerify
+	signType := common.DasAlgorithmIdWebauthn
+	backupAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+		ChainType:     common.ChainTypeWebauthn,
+		AddressNormal: req.BackupAddr,
+	})
+	if err != nil {
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
+		return err
+	}
+	idx := 255
+	if req.MasterAddr != req.BackupAddr {
+		masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+			ChainType:     common.ChainTypeWebauthn,
+			AddressNormal: req.MasterAddr,
+		})
+		if err != nil {
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
+			return err
+		}
+		log.Info("-----", masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
+		idx, err = h.dasCore.GetIdxOfKeylist(masterAddressHex, backupAddressHex)
+		if err != nil {
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "GetIdxOfKeylist err: "+err.Error())
+			return fmt.Errorf("GetIdxOfKeylist err: %s", err.Error())
+		}
+		if idx == -1 {
+			apiResp.ApiRespErr(http_api.ApiCodePermissionDenied, "permission denied")
+			return fmt.Errorf("permission denied")
+		}
+	}
+	h.dasCore.AddPkIndexForSignMsg(&req.Signature, idx)
+	signMsg := req.Msg
+	signature := req.Signature
+	address := backupAddressHex.AddressHex
+	verifyRes, _, err := http_api.VerifySignature(signType, signMsg, signature, address)
+	if err != nil {
+		apiResp.ApiRespErr(http_api.ApiCodeSignError, "VerifySignature err: "+err.Error())
+		return fmt.Errorf("VerifySignature err: %s", err.Error())
+	}
+	resp.IsValid = verifyRes
+	apiResp.ApiRespOK(resp)
+	return
+}

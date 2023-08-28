@@ -7,6 +7,7 @@
     * [Caculate CkbAddr](#caculate-ckbaddr)
     * [Transaction Send](#transaction-send)
     * [Transaction Status](#transaction-status)
+    * [Webauthn Verify](#webautn-verify)
 ## API LIST
 test api url https://test-webauthn-api.did.id
 
@@ -210,12 +211,12 @@ prod api url https://webauthn-api.did.id
 
 * path: /transaction/send
 * param:
-  * sign_type:签名类型，webauthn是8
-  * sign_address:签名的ckb地址
-  * sign_msg:签名 
-    * 签名是用LV的格式将webauthn.get()（签名方法）同步响应的signature, authnticatorData, clientDataJSON 三个字段按如下规则进行拼接
+  * sign_type:sign type，webauthn是8
+  * sign_address: signed ckb address
+  * sign_msg:signature 
+    * LV : webauthn.get() signature, authnticatorData, clientDataJSON Splice the three fields according to the following rules
     * len(signature) + signature + len(pubkey) + pubkey + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
-    * 其中len(signature) 为1个字节，len(pubkey) 为1个字节，len(authnticatorData)为1个字节，len(clientDataJSON)为2个字节的小端存储
+    * len(signature) 1byte，len(pubkey) 1byte，len(authnticatorData)为1byte，len(clientDataJSON)为2byte（Little Endian）
 ```json
 {
   "sign_key": "131fa067a0f34135898f1a85104bccf4",
@@ -281,5 +282,39 @@ prod api url https://webauthn-api.did.id
   "err_no": 11001,
   "err_msg": "not exits tx",
   "data": null
+}
+```
+
+### Webauthn Verify
+
+#### Request
+
+* path: /v1/webauthn/verify
+* params:
+  * master_addr: login ckb address
+  * backup_addr: sign ckb address
+  * msg: sign msg
+  * signature：
+  LV format: webauthn.get() signature, authnticatorData, clientDataJSON Splice the three fields according to the following rules
+  len(signature) + signature + len(pubkey) + pubkey + len(authnticatorData) + authnticatorData + len(clientDataJSON) + clientDataJSON
+  len(signature) 1byte，len(pubkey) 1byte，len(authnticatorData)为1byte，len(clientDataJSON)为2byte（Little Endian）
+```json
+{
+  "master_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggq7w79h22yxg9h5r3vdw79yhka5vqn48t9yyq080zm49zryzm6pckxh0zjtmw6xqf6n4jj9r9323",
+  "backup_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqajfpetf3wxdye2vm0jnrgm0f5ksrn580qyqweysu45chrxjv4xdhef35dh56tgpe6rhsdqu8hw",
+  "msg":"aaa",
+  "signature":"40eb33e8e5d852e5cf340c492d115149ab5441034bb40a9db3af82e29f490f6551eecfa3933d95de15edddac2a05aee94936305fef34bdb81a112a7fae52bbc75940bdc4fbe5f27f521445baf9922e068a771280e36e6cc74440f481503f216568f5799587f4f23994b193e78a43a290f0467ec3b53593f6e019674e1d324aaf21d72549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d976305000000005f007b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a2259574668222c226f726967696e223a22687474703a2f2f6c6f63616c686f73743a38303031222c2263726f73734f726967696e223a66616c73657d"
+}
+```
+
+#### Response
+* is_valid: sign verify result 
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": {
+    "is_valid": true
+  }
 }
 ```
