@@ -36,7 +36,12 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/transaction/send", api_code.DoMonitorLog("transaction-send"), h.h.TransactionSend)
 		v1.POST("/transaction/status", api_code.DoMonitorLog("transaction-status"), h.h.TransactionStatus)
 		v1.POST("/webauthn/query-cid", api_code.DoMonitorLog("query-cid"), h.h.QueryCid)
+		//新增一个pk参数，后端查询ckb余额
 		v1.POST("/webauthn/cid-info", api_code.DoMonitorLog("cid-info"), h.h.CidInfo)
+		//在配置里增加cid
+		v1.POST("/webauthn/add-test-cid", api_code.DoMonitorLog("add-test-cid"), h.h.AddTestCid)
+		//标记cid，已经被覆盖
+		v1.POST("/webauthn/cover-cid", api_code.DoMonitorLog("cover-cid"), h.h.CoverCid)
 		v1.POST("/webauthn/verify", api_code.DoMonitorLog("cid-info"), h.h.VerifyWebauthnSign)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)

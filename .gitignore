@@ -18,5 +18,6 @@ vendor/
 
 # temp file
 config/config.yaml
+config/old_cid.json
 config/config.database.yaml
 mysql-data
