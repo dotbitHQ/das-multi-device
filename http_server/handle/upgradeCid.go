@@ -63,7 +63,7 @@ func (h *HttpHandle) doCidInfo(req *ReqCidInfo, apiResp *http_api.ApiResp) (err 
 		return err
 	}
 	for _, v := range oldCids {
-		if v.Cid == cid {
+		if v.Cid == cid && !v.IsCover {
 			resp.IsOldCid = true
 		}
 	}
