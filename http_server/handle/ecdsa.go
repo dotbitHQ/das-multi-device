@@ -189,6 +189,9 @@ func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiR
 	}
 	h.dasCore.AddPkIndexForSignMsg(&req.Signature, idx)
 	signMsg := req.Msg
+	if common.Has0xPrefix(signMsg) {
+		signMsg = signMsg[2:]
+	}
 	signature := req.Signature
 	address := backupAddressHex.AddressHex
 	verifyRes, _, err := http_api.VerifySignature(signType, signMsg, signature, address)
