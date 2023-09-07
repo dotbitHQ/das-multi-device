@@ -3,6 +3,7 @@ package handle
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"das-multi-device/tool"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -38,15 +39,15 @@ func (h *HttpHandle) CidInfo(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doCidInfo(&req, &apiResp); err != nil {
-		log.Error("doCidInfo err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doCidInfo err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -114,15 +115,15 @@ func (h *HttpHandle) QueryCid(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doQueryCid(&req, &apiResp); err != nil {
-		log.Error("doCidInfo err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doCidInfo err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -170,15 +171,15 @@ func (h *HttpHandle) AddTestCid(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doAddTestCid(&req, &apiResp); err != nil {
-		log.Error("doCidInfo err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doCidInfo err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -241,15 +242,15 @@ func (h *HttpHandle) CoverCid(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doCoverCid(&req, &apiResp); err != nil {
-		log.Error("doCoverCid err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doCoverCid err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -291,12 +292,12 @@ func (h *HttpHandle) getOldCid() (oldCids []OldCid, err error) {
 	oldCidPath := "./conf/old_cid.json"
 	file, err := ioutil.ReadFile(oldCidPath)
 	if err != nil {
-		log.Fatalf("Some error occured while reading file. Error: %s", err)
+		tool.Log(nil).Fatalf("Some error occured while reading file. Error: %s", err)
 		return
 	}
 	err = json.Unmarshal(file, &oldCids)
 	if err != nil {
-		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
+		tool.Log(nil).Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
 		return
 	}
 	return

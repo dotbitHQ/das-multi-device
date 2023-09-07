@@ -13,11 +13,10 @@ import (
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/gin-gonic/gin"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
-	"github.com/scorpiotzh/mylog"
 )
 
 var (
-	log = mylog.NewLogger("http_handle", mylog.LevelDebug)
+//log = mylog.NewLogger("http_handle", mylog.LevelDebug)
 )
 
 type HttpHandle struct {
