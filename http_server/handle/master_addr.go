@@ -3,6 +3,7 @@ package handle
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"das-multi-device/tool"
 	"encoding/hex"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
@@ -47,16 +48,16 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doGetMasters(req, &apiResp); err != nil {
-		log.Error("doGetMasters err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doGetMasters err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -102,16 +103,16 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doGetOriginalPk(req, &apiResp); err != nil {
-		log.Error("doGetoriginalPk err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doGetoriginalPk err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -141,16 +142,16 @@ func (h *HttpHandle) CalculateCkbaddr(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doCalculateCkbAddr(req, &apiResp); err != nil {
-		log.Error("doGetMasters err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doGetMasters err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)

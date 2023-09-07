@@ -8,6 +8,7 @@ import (
 	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/scorpiotzh/toolib"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -19,7 +20,7 @@ func (h *HttpServer) initRouter() {
 	}
 	h.internalEngine.Use(toolib.MiddlewareCors())
 	h.engine.Use(toolib.MiddlewareCors())
-
+	h.engine.Use(initLoggerMiddleware())
 	v1 := h.engine.Group("v1")
 	{
 		//shortExpireTime, longExpireTime, lockTime := time.Second*5, time.Second*15, time.Minute
@@ -57,5 +58,18 @@ func respHandle(c *gin.Context, res string, err error) {
 		var respMap map[string]interface{}
 		_ = json.Unmarshal([]byte(res), &respMap)
 		c.AbortWithStatusJSON(http.StatusOK, respMap)
+	}
+}
+
+func initLoggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log := logrus.WithFields(logrus.Fields{
+			"request_id": c.GetHeader("request_id"),
+			"user_ip":    c.GetHeader("user_ip"),
+			"user_agent": c.GetHeader("User-Agent"),
+			//"path":logrus.
+		})
+		c.Set("logger", log)
+		c.Next() // 继续处理其他中间件和路由处理函数
 	}
 }

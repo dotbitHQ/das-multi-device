@@ -2,6 +2,7 @@ package handle
 
 import (
 	"das-multi-device/tables"
+	"das-multi-device/tool"
 	"encoding/json"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
@@ -34,17 +35,17 @@ func (h *HttpHandle) RpcTransactionSend(p json.RawMessage, apiResp *http_api.Api
 	var req []ReqTransactionSend
 	err := json.Unmarshal(p, &req)
 	if err != nil {
-		log.Error("json.Unmarshal err:", err.Error())
+		tool.Log(nil).Error("json.Unmarshal err:", err.Error())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return
 	} else if len(req) == 0 {
-		log.Error("len(req) is 0")
+		tool.Log(nil).Error("len(req) is 0")
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return
 	}
 
 	if err = h.doTransactionSend(&req[0], apiResp); err != nil {
-		log.Error("doVersion err:", err.Error())
+		tool.Log(nil).Error("doVersion err:", err.Error())
 	}
 }
 
@@ -58,15 +59,15 @@ func (h *HttpHandle) TransactionSend(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doTransactionSend(&req, &apiResp); err != nil {
-		log.Error("doTransactionSend err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doTransactionSend err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -117,7 +118,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			apiResp.ApiRespErr(http_api.ApiCodePermissionDenied, "permission denied")
 			return fmt.Errorf("permission denied")
 		}
-		log.Info("signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
+		tool.Log(nil).Info("signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
 		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
@@ -164,7 +165,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 				BlockTimestamp: uint64(time.Now().UnixNano() / 1e6),
 			}
 			if err = h.dbDao.CreatePending(&pending); err != nil {
-				log.Error("CreatePending err: ", err.Error(), toolib.JsonString(pending))
+				tool.Log(nil).Error("CreatePending err: ", err.Error(), toolib.JsonString(pending))
 			}
 			if sic.Notes != "" && sic.Avatar != 0 && sic.BackupCid != "" {
 				LoginAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
@@ -184,7 +185,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
 				}
 				if err = h.dbDao.CreateAvatarNotes(&avatarNotes); err != nil {
-					log.Error("CreateAvatarNotes err: ", err.Error(), toolib.JsonString(avatarNotes))
+					tool.Log(nil).Error("CreateAvatarNotes err: ", err.Error(), toolib.JsonString(avatarNotes))
 				}
 			}
 
@@ -205,15 +206,15 @@ func (h *HttpHandle) TransactionStatus(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doTransactionStatus(&req, &apiResp); err != nil {
-		log.Error("doTransactionStatus err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doTransactionStatus err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)

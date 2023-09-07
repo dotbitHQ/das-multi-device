@@ -1,27 +1,27 @@
 package config
 
 import (
+	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/fsnotify/fsnotify"
-	"github.com/scorpiotzh/mylog"
 	"github.com/scorpiotzh/toolib"
 )
 
 var (
 	Cfg CfgServer
-	log = mylog.NewLogger("config", mylog.LevelDebug)
+	//log = mytool.Log(nil).NewLogger("config", mytool.Log(nil).LevelDebug)
 )
 
 func InitCfg(configFilePath string) error {
 	if configFilePath == "" {
 		configFilePath = "../config/config.yaml"
 	}
-	log.Info("config file：", configFilePath)
+	tool.Log(nil).Info("config file：", configFilePath)
 	if err := toolib.UnmarshalYamlFile(configFilePath, &Cfg); err != nil {
 		return fmt.Errorf("UnmarshalYamlFile err:%s", err.Error())
 	}
-	log.Info("config file：ok")
+	tool.Log(nil).Info("config file：ok")
 	return nil
 }
 
@@ -30,11 +30,11 @@ func AddCfgFileWatcher(configFilePath string) (*fsnotify.Watcher, error) {
 		configFilePath = "../config/config.yaml"
 	}
 	return toolib.AddFileWatcher(configFilePath, func() {
-		log.Info("update config file：", configFilePath)
+		tool.Log(nil).Info("update config file：", configFilePath)
 		if err := toolib.UnmarshalYamlFile(configFilePath, &Cfg); err != nil {
-			log.Error("UnmarshalYamlFile err:", err.Error())
+			tool.Log(nil).Error("UnmarshalYamlFile err:", err.Error())
 		}
-		log.Info("update config file：ok")
+		tool.Log(nil).Info("update config file：ok")
 	})
 }
 

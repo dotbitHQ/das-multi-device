@@ -6,18 +6,17 @@ import (
 	"das-multi-device/dao"
 	"das-multi-device/notify"
 	"das-multi-device/tables"
+	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/witness"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
-	"github.com/scorpiotzh/mylog"
+	//"github.com/scorpiotzh/mylog"
 	"sync"
 	"sync/atomic"
 	"time"
 )
-
-var log = mylog.NewLogger("block_parser", mylog.LevelDebug)
 
 type BlockParser struct {
 	DasCore              *core.DasCore
@@ -51,22 +50,22 @@ func (b *BlockParser) Run() error {
 			default:
 				latestBlockNumber, err := b.DasCore.Client().GetTipBlockNumber(b.Ctx)
 				if err != nil {
-					log.Error("GetTipBlockNumber err:", err.Error())
+					tool.Log(nil).Error("GetTipBlockNumber err:", err.Error())
 				} else {
 					if b.ConcurrencyNum > 1 && b.CurrentBlockNumber < (latestBlockNumber-b.ConfirmNum-b.ConcurrencyNum) {
 						nowTime := time.Now()
 						if err = b.parserConcurrencyMode(); err != nil {
-							log.Error("parserConcurrencyMode err:", err.Error(), b.CurrentBlockNumber)
+							tool.Log(nil).Error("parserConcurrencyMode err:", err.Error(), b.CurrentBlockNumber)
 						}
-						log.Warn("parserConcurrencyMode time:", time.Since(nowTime).Seconds())
+						tool.Log(nil).Warn("parserConcurrencyMode time:", time.Since(nowTime).Seconds())
 					} else if b.CurrentBlockNumber < (latestBlockNumber - b.ConfirmNum) { // check rollback
 						nowTime := time.Now()
 						if err = b.parserSubMode(); err != nil {
-							log.Error("parserSubMode err:", err.Error(), b.CurrentBlockNumber)
+							tool.Log(nil).Error("parserSubMode err:", err.Error(), b.CurrentBlockNumber)
 						}
-						log.Warn("parserSubMode time:", time.Since(nowTime).Seconds())
+						tool.Log(nil).Warn("parserSubMode time:", time.Since(nowTime).Seconds())
 					} else {
-						log.Info("RunParser:", b.CurrentBlockNumber, latestBlockNumber)
+						tool.Log(nil).Info("RunParser:", b.CurrentBlockNumber, latestBlockNumber)
 						time.Sleep(time.Second * 10)
 					}
 					time.Sleep(time.Millisecond * 300)
@@ -92,18 +91,18 @@ func (b *BlockParser) initCurrentBlockNumber(currentBlockNumber uint64) error {
 }
 
 func (b *BlockParser) parserSubMode() error {
-	log.Info("parserSubMode:", b.CurrentBlockNumber)
+	tool.Log(nil).Info("parserSubMode:", b.CurrentBlockNumber)
 	block, err := b.DasCore.Client().GetBlockByNumber(b.Ctx, b.CurrentBlockNumber)
 	if err != nil {
 		return fmt.Errorf("GetBlockByNumber err: %s", err.Error())
 	} else {
 		blockHash := block.Header.Hash.Hex()
 		parentHash := block.Header.ParentHash.Hex()
-		log.Info("parserSubMode:", b.CurrentBlockNumber, blockHash, parentHash)
+		tool.Log(nil).Info("parserSubMode:", b.CurrentBlockNumber, blockHash, parentHash)
 		if fork, err := b.checkFork(parentHash); err != nil {
 			return fmt.Errorf("checkFork err: %s", err.Error())
 		} else if fork {
-			log.Warn("CheckFork is true:", b.CurrentBlockNumber, blockHash, parentHash)
+			tool.Log(nil).Warn("CheckFork is true:", b.CurrentBlockNumber, blockHash, parentHash)
 			atomic.AddUint64(&b.CurrentBlockNumber, ^uint64(0))
 		} else if err = b.parsingBlockData(block); err != nil {
 			return fmt.Errorf("parsingBlockData err: %s", err.Error())
@@ -129,14 +128,14 @@ func (b *BlockParser) checkFork(parentHash string) (bool, error) {
 	if block.Id == 0 {
 		return false, nil
 	} else if block.BlockHash != parentHash {
-		log.Warn("CheckFork:", b.CurrentBlockNumber, parentHash, block.BlockHash)
+		tool.Log(nil).Warn("CheckFork:", b.CurrentBlockNumber, parentHash, block.BlockHash)
 		return true, nil
 	}
 	return false, nil
 }
 
 func (b *BlockParser) parserConcurrencyMode() error {
-	log.Info("parserConcurrencyMode:", b.CurrentBlockNumber, b.ConcurrencyNum)
+	tool.Log(nil).Info("parserConcurrencyMode:", b.CurrentBlockNumber, b.ConcurrencyNum)
 	for i := uint64(0); i < b.ConcurrencyNum; i++ {
 		block, err := b.DasCore.Client().GetBlockByNumber(b.Ctx, b.CurrentBlockNumber)
 		if err != nil {
@@ -144,7 +143,7 @@ func (b *BlockParser) parserConcurrencyMode() error {
 		}
 		blockHash := block.Header.Hash.Hex()
 		parentHash := block.Header.ParentHash.Hex()
-		log.Info("parserConcurrencyMode:", b.CurrentBlockNumber, blockHash, parentHash)
+		tool.Log(nil).Info("parserConcurrencyMode:", b.CurrentBlockNumber, blockHash, parentHash)
 
 		if err = b.parsingBlockData(block); err != nil {
 			return fmt.Errorf("parsingBlockData err: %s", err.Error())
@@ -172,7 +171,7 @@ func (b *BlockParser) parsingBlockData(block *types.Block) error {
 		blockTimestamp := block.Header.Timestamp
 
 		if builder, err := witness.ActionDataBuilderFromTx(tx); err != nil {
-			//log.Warn("ActionDataBuilderFromTx err:", err.Error())
+			//tool.Log(nil).Warn("ActionDataBuilderFromTx err:", err.Error())
 		} else {
 			if handle, ok := b.mapTransactionHandle[builder.Action]; ok {
 				// transaction parse by action
@@ -186,7 +185,7 @@ func (b *BlockParser) parsingBlockData(block *types.Block) error {
 				})
 				if resp.Err != nil {
 					b.errCountHandle++
-					log.Error("action handle resp:", builder.Action, blockNumber, txHash, resp.Err.Error())
+					tool.Log(nil).Error("action handle resp:", builder.Action, blockNumber, txHash, resp.Err.Error())
 					if b.errCountHandle < 100 {
 						notify.SendLarkTextNotify(config.Cfg.Notify.LarkErrorKey, "Block Parse", notify.GetLarkTextNotifyStr("TransactionHandle", txHash, resp.Err.Error()))
 					}
@@ -221,11 +220,11 @@ func (b *BlockParser) checkContractVersion() error {
 	}
 	for _, v := range contractNames {
 		defaultVersion, chainVersion, err := b.DasCore.CheckContractVersionV2(sysStatus, v)
-		log.Info("checkContractVersion:", defaultVersion, chainVersion, v)
+		tool.Log(nil).Info("checkContractVersion:", defaultVersion, chainVersion, v)
 		if err != nil {
 			if err == core.ErrContractMajorVersionDiff {
-				log.Errorf("contract[%s] version diff, chain[%s], service[%s].", v, chainVersion, defaultVersion)
-				log.Error("Please update the service. [https://github.com/dotbitHQ/das-register]")
+				tool.Log(nil).Errorf("contract[%s] version diff, chain[%s], service[%s].", v, chainVersion, defaultVersion)
+				tool.Log(nil).Error("Please update the service. [https://github.com/dotbitHQ/das-register]")
 				if b.Cancel != nil && !config.Cfg.Server.NotExit {
 					b.Cancel()
 				}
