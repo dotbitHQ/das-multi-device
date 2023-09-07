@@ -96,6 +96,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			break
 		}
 	}
+
 	if hasWebAuthn {
 		keyListCfgOutPoint := common.String2OutPointStruct(sic.KeyListCfgCellOpt)
 		signAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
@@ -106,6 +107,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
 			return err
 		}
+
 		idx, err := h.dasCore.GetIdxOfKeylistByOutPoint(keyListCfgOutPoint, signAddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
@@ -122,8 +124,6 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			}
 			h.dasCore.AddPkIndexForSignMsg(&req.SignList[i].SignMsg, idx)
 		}
-	} else {
-		//todo warning 日志
 	}
 
 	// sign
@@ -166,6 +166,28 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			if err = h.dbDao.CreatePending(&pending); err != nil {
 				log.Error("CreatePending err: ", err.Error(), toolib.JsonString(pending))
 			}
+			if sic.Notes != "" && sic.Avatar != 0 && sic.BackupCid != "" {
+				LoginAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
+					ChainType:     common.ChainTypeWebauthn,
+					AddressNormal: sic.Address, //Signed address
+				})
+				if err != nil {
+					apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
+					return err
+				}
+				masterCid := common.Bytes2Hex(LoginAddressHex.AddressPayload[:10])
+				avatarNotes := tables.TableAvatarNotes{
+					MasterCid: masterCid,
+					SlaveCid:  sic.BackupCid,
+					Avatar:    sic.Avatar,
+					Notes:     sic.Notes,
+					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
+				}
+				if err = h.dbDao.CreateAvatarNotes(&avatarNotes); err != nil {
+					log.Error("CreateAvatarNotes err: ", err.Error(), toolib.JsonString(avatarNotes))
+				}
+			}
+
 		}
 	}
 

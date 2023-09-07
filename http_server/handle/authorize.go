@@ -23,6 +23,8 @@ type ReqAuthorize struct {
 	MasterCkbAddress string                     `json:"master_ckb_address" binding:"required"`
 	SlaveCkbAddress  string                     `json:"slave_ckb_address" binding:"required"`
 	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"` //operation = 0 删除，1 添加
+	Notes            string                     `json:"notes" binding:"max=100"`
+	Avatar           int                        `json:"avatar" binding:"lt=40"`
 }
 
 type RespAuthorize struct {
@@ -39,6 +41,8 @@ type reqBuildWebauthnTx struct {
 	MasterPayLoad         []byte
 	SlavePayload          []byte
 	Capacity              uint64 `json:"capacity"`
+	Notes                 string `json:"notes"`
+	Avatar                int    `json:"avatar"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
@@ -131,6 +135,8 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		MasterPayLoad:         masterAddressHex.AddressPayload,
 		SlavePayload:          slaveAddressHex.AddressPayload,
 		Capacity:              0,
+		Avatar:                req.Avatar,
+		Notes:                 req.Notes,
 	}
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
@@ -262,12 +268,18 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	}
 
 	var skipGroups []int
+	var sic SignInfoCache
 	switch req.Action {
 	case common.DasActionUpdateKeyList:
 		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
 		changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
 		txBuilder.Transaction.Outputs[0].Capacity = changeCapacity
 		log.Info("buildTx:", req.Action, sizeInBlock, changeCapacity)
+		if req.Operation == common.AddWebAuthnKey {
+			sic.Notes = req.Notes
+			sic.Avatar = req.Avatar
+			sic.BackupCid = common.Bytes2Hex(req.SlavePayload[:10])
+		}
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
 	if err != nil {
@@ -276,7 +288,6 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 
 	log.Info("buildTx:", txBuilder.TxString())
 
-	var sic SignInfoCache
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
 	sic.Address = req.MasterCkbAddr
@@ -504,9 +515,15 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 type ReqAuthorizeInfo struct {
 	CkbAddress string `json:"ckb_address" binding:"required"`
 }
+
+type AuthorizeInfo struct {
+	Address string `json:"address"`
+	Avatar  int    `json:"avatar"`
+	Notes   string `json:"notes"`
+}
 type RespAuthorizeInfo struct {
-	CanAuthorize int      `json:"can_authorize"`
-	CkbAddress   []string `json:"ckb_address"`
+	CanAuthorize int             `json:"can_authorize"`
+	CkbAddress   []AuthorizeInfo `json:"ckb_address"`
 }
 
 func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
@@ -544,15 +561,15 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return err
 	}
-	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
-	res, err := h.dbDao.GetCidPk(cid1)
+	masterCid := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
+	res, err := h.dbDao.GetCidPk(masterCid)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeDbError, "Search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	//resp.EnableAuthorize = int(res.EnableAuthorize)
-	resp.CkbAddress = make([]string, 0)
-
+	authorizeList := make([]AuthorizeInfo, 0)
+	fmt.Println("res:: ", res)
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
 		if res.Outpoint == "" {
 			apiResp.ApiRespErr(http_api.ApiCodeError500, "outpoint is empty")
@@ -568,7 +585,9 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 			return err
 		}
 		keys := builder.DeviceKeyListCellData.Keys()
+
 		for i := uint(0); i < keys.Len(); i++ {
+			temp := AuthorizeInfo{}
 			key := keys.Get(i)
 			mId, _ := molecule.Bytes2GoU8(key.MainAlgId().RawData())
 			subId, _ := molecule.Bytes2GoU8(key.SubAlgId().RawData())
@@ -588,10 +607,22 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 			if err != nil {
 				return err
 			}
-			resp.CkbAddress = append(resp.CkbAddress, addrNormal.AddressNormal)
-		}
-	}
+			temp.Address = addrNormal.AddressNormal
+			avatarNotes, err := h.dbDao.GetAvatarNotes(masterCid, common.Bytes2Hex(cid1))
+			if err != nil {
+				apiResp.ApiRespErr(http_api.ApiCodeDbError, "GetAvatarNotes err")
+				return fmt.Errorf("GetAvatarNotes err: %s", err.Error())
+			}
+			if avatarNotes.Id != 0 {
+				temp.Notes = avatarNotes.Notes
+				temp.Avatar = avatarNotes.Avatar
+			}
+			authorizeList = append(authorizeList, temp)
 
+		}
+
+	}
+	resp.CkbAddress = authorizeList
 	if res.EnableAuthorize == 0 {
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {

@@ -116,11 +116,15 @@ prod api url https://webauthn-api.did.id
     * master_ckb_address: Authorized CKB address (string, necessary)
     * slave_ckb_address: CKB address to be authorized (string, necessary)
     * operation: add: add autorize，delete：delete autorize (string necessary)
+    * avatar: avatar of backup address
+    * notes: notes of backup address
 ```json
 {
   "master_ckb_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m",
   "slave_ckb_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"
-  "operation" : "add"
+  "operation" : "add",
+  "avatar": 2,
+  "notes": "phone-1"
 }
 ```
 
@@ -158,13 +162,22 @@ prod api url https://webauthn-api.did.id
 #### Response
   * can_authorize: permission to enable backup
   * ckb_address
+    * address: ckb address
+    * avatar: avatar of backup address
+    * notes: notes of backup address
 ```json
 {
   "err_no": 0,
   "err_msg": "",
   "data": {
     "can_authorize" :1,
-    "ckb_address": ["ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"]
+    "ckb_address": [
+      {
+        "address": "ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"
+        "avatar": 2,
+        "notes": "mac-01"
+      }
+    ]
   }
 }
 ```
