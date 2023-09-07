@@ -13,6 +13,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/scorpiotzh/mylog v1.0.10
 	github.com/scorpiotzh/toolib v1.1.6
+	github.com/sirupsen/logrus v1.9.0
 	github.com/urfave/cli/v2 v2.10.2
 	gorm.io/gorm v1.23.6
 )
