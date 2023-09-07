@@ -21,3 +21,4 @@ config/config.yaml
 config/old_cid.json
 config/config.database.yaml
 mysql-data
+das_multi_device
