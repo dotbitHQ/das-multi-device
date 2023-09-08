@@ -26,6 +26,7 @@ type ReqAuthorize struct {
 	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"` //operation = 0 删除，1 添加
 	Notes            string                     `json:"notes" binding:"max=100"`
 	Avatar           int                        `json:"avatar" binding:"lt=40"`
+	MasterNotes      string                     `json:"master_notes" binding:"max=100"`
 }
 
 type RespAuthorize struct {
@@ -44,6 +45,7 @@ type reqBuildWebauthnTx struct {
 	Capacity              uint64 `json:"capacity"`
 	Notes                 string `json:"notes"`
 	Avatar                int    `json:"avatar"`
+	MasterNotes           string `json:"master_notes"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
@@ -138,6 +140,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		Capacity:              0,
 		Avatar:                req.Avatar,
 		Notes:                 req.Notes,
+		MasterNotes:           req.MasterNotes,
 	}
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
@@ -280,6 +283,7 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 			sic.Notes = req.Notes
 			sic.Avatar = req.Avatar
 			sic.BackupCid = common.Bytes2Hex(req.SlavePayload[:10])
+			sic.MasterNotes = req.MasterNotes
 		}
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
