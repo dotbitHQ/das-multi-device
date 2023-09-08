@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (d *DbDao) CreateAvatarNotes(avatarNotes *tables.TableAvatarNotes) error {
+func (d *DbDao) CreateAvatarNotes(avatarNotes tables.TableAvatarNotes, masterAvatarNotes tables.TableAvatarNotes) error {
 	return d.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.OnConflict{
 			DoUpdates: clause.AssignmentColumns([]string{
@@ -15,6 +15,15 @@ func (d *DbDao) CreateAvatarNotes(avatarNotes *tables.TableAvatarNotes) error {
 				"outpoint",
 			}),
 		}).Create(&avatarNotes).Error; err != nil {
+			return err
+		}
+		if err := tx.Clauses(clause.OnConflict{
+			DoUpdates: clause.AssignmentColumns([]string{
+				"avatar",
+				"notes",
+				"outpoint",
+			}),
+		}).Create(&masterAvatarNotes).Error; err != nil {
 			return err
 		}
 		return nil

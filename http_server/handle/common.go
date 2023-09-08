@@ -52,6 +52,7 @@ type SignInfoCache struct {
 	Avatar            int                                `json:"avatar"`
 	Notes             string                             `json:"notes"`
 	BackupCid         string                             `json:"backup_cid"`
+	MasterNotes       string                             `json:"master_notes" `
 }
 
 func (s *SignInfoCache) SignKey() string {
