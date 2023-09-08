@@ -528,6 +528,7 @@ type AuthorizeInfo struct {
 }
 type RespAuthorizeInfo struct {
 	CanAuthorize int             `json:"can_authorize"`
+	MasterNotes  string          `json:"master_notes"`
 	CkbAddress   []AuthorizeInfo `json:"ckb_address"`
 }
 
@@ -627,6 +628,13 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		}
 
 	}
+	//masterNotes
+	masterAvatarNotes, err := h.dbDao.GetAvatarNotes(masterCid, masterCid)
+	if err != nil {
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "GetAvatarNotes err")
+		return fmt.Errorf("GetAvatarNotes err: %s", err.Error())
+	}
+	resp.MasterNotes = masterAvatarNotes.Notes
 	resp.CkbAddress = authorizeList
 	if res.EnableAuthorize == 0 {
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
