@@ -177,23 +177,24 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 					return err
 				}
 				masterCid := common.Bytes2Hex(LoginAddressHex.AddressPayload[:10])
+				avatarNotes := make([]tables.TableAvatarNotes, 0)
 				//backup
-				avatarNotes := tables.TableAvatarNotes{
+				avatarNotes = append(avatarNotes, tables.TableAvatarNotes{
 					MasterCid: masterCid,
 					SlaveCid:  sic.BackupCid,
 					Avatar:    sic.Avatar,
 					Notes:     sic.Notes,
 					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
-				}
+				})
 				//master
-				masterAvatarNotes := tables.TableAvatarNotes{
+				avatarNotes = append(avatarNotes, tables.TableAvatarNotes{
 					MasterCid: masterCid,
 					SlaveCid:  masterCid,
 					Avatar:    0, //default
 					Notes:     sic.MasterNotes,
 					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
-				}
-				if err = h.dbDao.CreateAvatarNotes(avatarNotes, masterAvatarNotes); err != nil {
+				})
+				if err = h.dbDao.CreateAvatarNotes(avatarNotes); err != nil {
 					tool.Log(nil).Error("CreateAvatarNotes err: ", err.Error(), toolib.JsonString(avatarNotes))
 				}
 			}
