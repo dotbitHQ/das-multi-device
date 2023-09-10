@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"das-multi-device/tool"
 	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -29,7 +30,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 	apiResp := http_api.ApiResp{}
 	conn, err := upGrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		log.Error("websocket Upgrader err:", err.Error())
+		tool.Log(ctx).Error("websocket Upgrader err:", err.Error())
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "websocket Upgrader error")
 		return
 	}
@@ -65,7 +66,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 	for {
 		msg := &MsgData{}
 		if err := conn.ReadJSON(msg); err != nil {
-			log.Error("coon ReadJSON err:", err.Error())
+			tool.Log(ctx).Error("coon ReadJSON err:", err.Error())
 			break
 		}
 
@@ -86,7 +87,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 							"peers": msg.From,
 						},
 					}); err != nil {
-						log.Errorf("send joiner to others err: %s", err)
+						tool.Log(ctx).Errorf("send joiner to others err: %s", err)
 					}
 				}()
 			}
@@ -120,7 +121,7 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 					"peers": cids,
 				},
 			}); err != nil {
-				log.Error("coon WriteJSON err:", err.Error())
+				tool.Log(ctx).Error("coon WriteJSON err:", err.Error())
 				break
 			}
 		case "offer", "answer", "candidate":
@@ -128,12 +129,12 @@ func (h *HttpHandle) WebRTCWebSocket(ctx *gin.Context) {
 			c, ok := PeersMap[msg.To]
 			if !ok {
 				peersMapLock.RUnlock()
-				log.Error("cid:%s not exist", msg.To)
+				tool.Log(ctx).Error("cid:%s not exist", msg.To)
 				continue
 			}
 			peersMapLock.RUnlock()
 			if err := c.WriteJSON(msg); err != nil {
-				log.Error("coon WriteJSON err:", err.Error())
+				tool.Log(ctx).Error("coon WriteJSON err:", err.Error())
 				break
 			}
 		}

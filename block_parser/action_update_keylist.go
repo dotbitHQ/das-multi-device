@@ -17,6 +17,9 @@ func (b *BlockParser) ActionUpdateKeylist(req FuncTransactionHandleReq) (resp Fu
 		resp.Err = fmt.Errorf("UpdatePendingStatusToConfirm err: %s", err.Error())
 		return
 	}
-
+	if err := b.DbDao.UpdateAvatrNotesToConfirm(outpoint, req.BlockNumber, req.BlockTimestamp); err != nil {
+		resp.Err = fmt.Errorf("UpdateAvatrNotesToConfirm err: %s", err.Error())
+		return
+	}
 	return
 }

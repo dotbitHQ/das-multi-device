@@ -4,6 +4,7 @@ import (
 	"das-multi-device/cache"
 	"das-multi-device/config"
 	"das-multi-device/tables"
+	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
@@ -23,6 +24,9 @@ type ReqAuthorize struct {
 	MasterCkbAddress string                     `json:"master_ckb_address" binding:"required"`
 	SlaveCkbAddress  string                     `json:"slave_ckb_address" binding:"required"`
 	Operation        common.WebAuchonKeyOperate `json:"operation" binding:"required"` //operation = 0 删除，1 添加
+	Notes            string                     `json:"notes" binding:"max=100"`
+	Avatar           int                        `json:"avatar" binding:"lt=40"`
+	MasterNotes      string                     `json:"master_notes" binding:"max=100"`
 }
 
 type RespAuthorize struct {
@@ -39,6 +43,9 @@ type reqBuildWebauthnTx struct {
 	MasterPayLoad         []byte
 	SlavePayload          []byte
 	Capacity              uint64 `json:"capacity"`
+	Notes                 string `json:"notes"`
+	Avatar                int    `json:"avatar"`
+	MasterNotes           string `json:"master_notes"`
 }
 
 func (h *HttpHandle) Authorize(ctx *gin.Context) {
@@ -51,15 +58,15 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doAuthorize(&req, &apiResp); err != nil {
-		log.Error("doAuthorize err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doAuthorize err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -78,14 +85,14 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
-	log.Info("cid1: ", cid1)
+	tool.Log(nil).Info("cid1: ", cid1)
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
-	log.Info("db outpoint: ", keyListConfigCellOutPoint)
+	tool.Log(nil).Info("db outpoint: ", keyListConfigCellOutPoint)
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
@@ -110,7 +117,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 			return fmt.Errorf("createKeyListCfgCell err: %s", err.Error())
 		}
 	}
-	log.Info("outpoint: ", keyListConfigCellOutPoint)
+	tool.Log(nil).Info("outpoint: ", keyListConfigCellOutPoint)
 	//update keyListConfigCell (add das-lock-key)
 	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
@@ -131,6 +138,9 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		MasterPayLoad:         masterAddressHex.AddressPayload,
 		SlavePayload:          slaveAddressHex.AddressPayload,
 		Capacity:              0,
+		Avatar:                req.Avatar,
+		Notes:                 req.Notes,
+		MasterNotes:           req.MasterNotes,
 	}
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
@@ -178,7 +188,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}
 	//capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
-	log.Info("res.Transaction.Outputs: ", res.Transaction.Outputs)
+	tool.Log(nil).Info("res.Transaction.Outputs: ", res.Transaction.Outputs)
 	if len(res.Transaction.Outputs) == 0 {
 		return nil, fmt.Errorf("KeyListCfgTransaction not exists")
 	}
@@ -196,8 +206,8 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 
 	nowKeyList := witness.ConvertToWebauthnKeyList(builder.DeviceKeyListCellData.Keys())
 	var newKeyList []witness.WebauthnKey
-	log.Info("nowKeyList: ", nowKeyList)
-	log.Info("slaveKey: ", webAuthnKey)
+	tool.Log(nil).Info("nowKeyList: ", nowKeyList)
+	tool.Log(nil).Info("slaveKey: ", webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
 		if len(nowKeyList) > 9 {
@@ -262,21 +272,27 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 	}
 
 	var skipGroups []int
+	var sic SignInfoCache
 	switch req.Action {
 	case common.DasActionUpdateKeyList:
 		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
 		changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
 		txBuilder.Transaction.Outputs[0].Capacity = changeCapacity
-		log.Info("buildTx:", req.Action, sizeInBlock, changeCapacity)
+		tool.Log(nil).Info("buildTx:", req.Action, sizeInBlock, changeCapacity)
+		if req.Operation == common.AddWebAuthnKey {
+			sic.Notes = req.Notes
+			sic.Avatar = req.Avatar
+			sic.BackupCid = common.Bytes2Hex(req.SlavePayload[:10])
+			sic.MasterNotes = req.MasterNotes
+		}
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
 	if err != nil {
 		return nil, fmt.Errorf("txBuilder.GenerateDigestListFromTx err: %s", err.Error())
 	}
 
-	log.Info("buildTx:", txBuilder.TxString())
+	tool.Log(nil).Info("buildTx:", txBuilder.TxString())
 
-	var sic SignInfoCache
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
 	sic.Address = req.MasterCkbAddr
@@ -338,7 +354,7 @@ func (h *HttpHandle) createKeyListCfgCell(payload string) (outPoint string, outP
 	}
 	defer func() {
 		if err := delFunc(); err != nil {
-			log.Errorf("createKeyListCfgCell delete redis key err: %s", err)
+			tool.Log(nil).Errorf("createKeyListCfgCell delete redis key err: %s", err)
 		}
 	}()
 
@@ -504,9 +520,16 @@ func (h *HttpHandle) buildCreateKeyListCfgTx(webauthnPayload string) (*txbuilder
 type ReqAuthorizeInfo struct {
 	CkbAddress string `json:"ckb_address" binding:"required"`
 }
+
+type AuthorizeInfo struct {
+	Address string `json:"address"`
+	Avatar  int    `json:"avatar"`
+	Notes   string `json:"notes"`
+}
 type RespAuthorizeInfo struct {
-	CanAuthorize int      `json:"can_authorize"`
-	CkbAddress   []string `json:"ckb_address"`
+	CanAuthorize int             `json:"can_authorize"`
+	MasterNotes  string          `json:"master_notes"`
+	CkbAddress   []AuthorizeInfo `json:"ckb_address"`
 }
 
 func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
@@ -519,16 +542,16 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
 
 	if err = h.doAuthorizeInfo(req, &apiResp); err != nil {
-		log.Error("doIfEnableAuthorize err:", err.Error(), funcName, clientIp)
+		tool.Log(ctx).Error("doIfEnableAuthorize err:", err.Error(), funcName, clientIp)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -544,15 +567,15 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
 		return err
 	}
-	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
-	res, err := h.dbDao.GetCidPk(cid1)
+	masterCid := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
+	res, err := h.dbDao.GetCidPk(masterCid)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeDbError, "Search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	//resp.EnableAuthorize = int(res.EnableAuthorize)
-	resp.CkbAddress = make([]string, 0)
-
+	authorizeList := make([]AuthorizeInfo, 0)
+	fmt.Println("res:: ", res)
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
 		if res.Outpoint == "" {
 			apiResp.ApiRespErr(http_api.ApiCodeError500, "outpoint is empty")
@@ -568,7 +591,9 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 			return err
 		}
 		keys := builder.DeviceKeyListCellData.Keys()
+
 		for i := uint(0); i < keys.Len(); i++ {
+			temp := AuthorizeInfo{}
 			key := keys.Get(i)
 			mId, _ := molecule.Bytes2GoU8(key.MainAlgId().RawData())
 			subId, _ := molecule.Bytes2GoU8(key.SubAlgId().RawData())
@@ -588,10 +613,29 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 			if err != nil {
 				return err
 			}
-			resp.CkbAddress = append(resp.CkbAddress, addrNormal.AddressNormal)
-		}
-	}
+			temp.Address = addrNormal.AddressNormal
+			avatarNotes, err := h.dbDao.GetAvatarNotes(masterCid, common.Bytes2Hex(cid1))
+			if err != nil {
+				apiResp.ApiRespErr(http_api.ApiCodeDbError, "GetAvatarNotes err")
+				return fmt.Errorf("GetAvatarNotes err: %s", err.Error())
+			}
+			if avatarNotes.Id != 0 {
+				temp.Notes = avatarNotes.Notes
+				temp.Avatar = avatarNotes.Avatar
+			}
+			authorizeList = append(authorizeList, temp)
 
+		}
+
+	}
+	//masterNotes
+	masterAvatarNotes, err := h.dbDao.GetAvatarNotes(masterCid, masterCid)
+	if err != nil {
+		apiResp.ApiRespErr(http_api.ApiCodeDbError, "GetAvatarNotes err")
+		return fmt.Errorf("GetAvatarNotes err: %s", err.Error())
+	}
+	resp.MasterNotes = masterAvatarNotes.Notes
+	resp.CkbAddress = authorizeList
 	if res.EnableAuthorize == 0 {
 		canCreate, err := h.checkCanBeCreated(masterAddressHex.AddressHex)
 		if err != nil {

@@ -49,6 +49,10 @@ type SignInfoCache struct {
 	Capacity          uint64                             `json:"capacity"`
 	KeyListCfgCellOpt string                             `json:"key_list_cfg_cell_opt"`
 	BuilderTx         *txbuilder.DasTxBuilderTransaction `json:"builder_tx"`
+	Avatar            int                                `json:"avatar"`
+	Notes             string                             `json:"notes"`
+	BackupCid         string                             `json:"backup_cid"`
+	MasterNotes       string                             `json:"master_notes" `
 }
 
 func (s *SignInfoCache) SignKey() string {
