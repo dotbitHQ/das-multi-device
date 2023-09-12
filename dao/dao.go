@@ -4,7 +4,7 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/tables"
 	"fmt"
-	"github.com/scorpiotzh/toolib"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +14,7 @@ type DbDao struct {
 }
 
 func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, error) {
-	db, err := toolib.NewGormDB(dbMysql.Addr, dbMysql.User, dbMysql.Password, dbMysql.DbName, dbMysql.MaxOpenConn, dbMysql.MaxIdleConn)
+	db, err := http_api.NewGormDB(dbMysql.Addr, dbMysql.User, dbMysql.Password, dbMysql.DbName, dbMysql.MaxOpenConn, dbMysql.MaxIdleConn)
 	if err != nil {
 		return nil, fmt.Errorf("toolib.NewGormDB err: %s", err.Error())
 	}
@@ -23,7 +23,7 @@ func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, e
 	// It will change existing column’s type if its size, precision, nullable changed.
 	// It WON’T delete unused columns to protect your data.
 
-	parserDb, err := toolib.NewGormDB(parserMysql.Addr, parserMysql.User, parserMysql.Password, parserMysql.DbName, parserMysql.MaxOpenConn, parserMysql.MaxIdleConn)
+	parserDb, err := http_api.NewGormDB(parserMysql.Addr, parserMysql.User, parserMysql.Password, parserMysql.DbName, parserMysql.MaxOpenConn, parserMysql.MaxIdleConn)
 	if err != nil {
 		return nil, fmt.Errorf("toolib.NewGormDB err: %s", err.Error())
 	}

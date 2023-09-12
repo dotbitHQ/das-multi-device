@@ -7,14 +7,15 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/dao"
 	"das-multi-device/http_server"
-	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/dascache"
+	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/dotbitHQ/das-lib/remote_sign"
 	"github.com/dotbitHQ/das-lib/sign"
 	"github.com/dotbitHQ/das-lib/txbuilder"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/nervosnetwork/ckb-sdk-go/address"
@@ -22,6 +23,7 @@ import (
 	"github.com/nervosnetwork/ckb-sdk-go/types"
 	"github.com/scorpiotzh/toolib"
 
+	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/urfave/cli/v2"
 	"os"
 	"sync"
@@ -29,7 +31,7 @@ import (
 )
 
 var (
-	//log               = mylog.NewLogger("main", mylog.LevelDebug)
+	log               = logger.NewLogger("main", logger.LevelDebug)
 	exit              = make(chan struct{})
 	ctxServer, cancel = context.WithCancel(context.Background())
 	wgServer          = sync.WaitGroup{}
@@ -48,14 +50,7 @@ func (hook *DefaultFieldHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 func main() {
-	var hook DefaultFieldHook
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-	logrus.AddHook(&hook)
-	logrus.SetFormatter(&logrus.JSONFormatter{
-		//DisableColors:   true,
-		TimestampFormat: "2006-01-02 15:03:04",
-	})
-	tool.Log(nil).Debugf("start：")
+	log.Debugf("start：")
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -68,7 +63,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		tool.Log(nil).Fatal(err)
+		log.Fatal(err)
 	}
 }
 
@@ -86,19 +81,24 @@ func runServer(ctx *cli.Context) error {
 	}
 	// ============= service start =============
 
+	//sentry
+	if err := http_api.SentryInit(config.Cfg.Notify.SentryDsn); err != nil {
+		return fmt.Errorf("SentryInit err: %s", err.Error())
+	}
+	defer http_api.RecoverPanic()
 	// db
 	dbDao, err := dao.NewGormDB(config.Cfg.DB.Mysql, config.Cfg.DB.ParserMysql, true)
 	if err != nil {
 		return fmt.Errorf("NewGormDB err: %s", err.Error())
 	}
-	tool.Log(nil).Infof("db ok")
+	log.Infof("db ok")
 	// redis
 	red, err := toolib.NewRedisClient(config.Cfg.Cache.Redis.Addr, config.Cfg.Cache.Redis.Password, config.Cfg.Cache.Redis.DbNum)
 	if err != nil {
-		tool.Log(nil).Info("NewRedisClient err: %s", err.Error())
+		log.Info("NewRedisClient err: %s", err.Error())
 		//return fmt.Errorf("NewRedisClient err:%s", err.Error())
 	} else {
-		tool.Log(nil).Info("redis ok")
+		log.Info("redis ok")
 	}
 
 	rc := cache.Initialize(red)
@@ -128,7 +128,7 @@ func runServer(ctx *cli.Context) error {
 	if err := bp.Run(); err != nil {
 		return fmt.Errorf("block parser err: %s", err.Error())
 	}
-	tool.Log(nil).Info("block parser ok")
+	log.Info("block parser ok")
 
 	// http
 	hs, err := http_server.Initialize(http_server.HttpServerParams{
@@ -146,17 +146,17 @@ func runServer(ctx *cli.Context) error {
 		return fmt.Errorf("http server Initialize err:%s", err.Error())
 	}
 	hs.Run()
-	tool.Log(nil).Info("httpserver ok")
+	log.Info("httpserver ok")
 	// ============= service end =============
 	toolib.ExitMonitoring(func(sig os.Signal) {
-		tool.Log(nil).Warn("ExitMonitoring:", sig.String())
+		log.Warn("ExitMonitoring:", sig.String())
 		if watcher != nil {
-			tool.Log(nil).Warn("close watcher ... ")
+			log.Warn("close watcher ... ")
 			_ = watcher.Close()
 		}
 		cancel()
 		wgServer.Wait()
-		tool.Log(nil).Warn("success exit server. bye bye!")
+		log.Warn("success exit server. bye bye!")
 		time.Sleep(time.Second)
 		exit <- struct{}{}
 	})
@@ -172,7 +172,7 @@ func initDasCore() (*core.DasCore, *dascache.DasCache, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("rpc.DialWithIndexer err: %s", err.Error())
 	}
-	tool.Log(nil).Info("ckb node ok")
+	log.Info("ckb node ok")
 
 	// das init
 	env := core.InitEnvOpt(config.Cfg.Server.Net, common.DasContractNameConfigCellType, common.DasContractNameAccountCellType,
@@ -197,12 +197,12 @@ func initDasCore() (*core.DasCore, *dascache.DasCache, error) {
 	dasCore.RunAsyncDasConfigCell(time.Minute * 5) // config cell outpoint
 	dasCore.RunAsyncDasSoScript(time.Minute * 7)   // so
 
-	tool.Log(nil).Info("das contract ok")
+	log.Info("das contract ok")
 
 	// das cache
 	dasCache := dascache.NewDasCache(ctxServer, &wgServer)
 	dasCache.RunClearExpiredOutPoint(time.Minute * 15)
-	tool.Log(nil).Info("das cache ok")
+	log.Info("das cache ok")
 
 	return dasCore, dasCache, nil
 }
@@ -213,7 +213,7 @@ func initTxBuilder(dasCore *core.DasCore) (*txbuilder.DasTxBuilderBase, *types.S
 	if config.Cfg.Server.PayServerAddress != "" {
 		parseAddress, err := address.Parse(config.Cfg.Server.PayServerAddress)
 		if err != nil {
-			tool.Log(nil).Error("pay server address.Parse err: ", err.Error())
+			log.Error("pay server address.Parse err: ", err.Error())
 		} else {
 			payServerAddressArgs = common.Bytes2Hex(parseAddress.Script.Args)
 			serverScript = parseAddress.Script
@@ -231,7 +231,7 @@ func initTxBuilder(dasCore *core.DasCore) (*txbuilder.DasTxBuilderBase, *types.S
 		handleSign = sign.LocalSign(config.Cfg.Server.PayPrivate)
 	}
 	txBuilderBase := txbuilder.NewDasTxBuilderBase(ctxServer, dasCore, handleSign, payServerAddressArgs)
-	tool.Log(nil).Info("tx builder ok")
+	log.Info("tx builder ok")
 
 	return txBuilderBase, serverScript, nil
 }
