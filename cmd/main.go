@@ -16,8 +16,6 @@ import (
 	"github.com/dotbitHQ/das-lib/sign"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/nervosnetwork/ckb-sdk-go/address"
 	"github.com/nervosnetwork/ckb-sdk-go/rpc"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
@@ -37,18 +35,6 @@ var (
 	wgServer          = sync.WaitGroup{}
 )
 
-type DefaultFieldHook struct {
-}
-
-func (hook *DefaultFieldHook) Fire(entry *logrus.Entry) error {
-	entry.Data["service_name"] = "das-multi-device"
-	entry.Data["env"] = "dev"
-	return nil
-}
-
-func (hook *DefaultFieldHook) Levels() []logrus.Level {
-	return logrus.AllLevels
-}
 func main() {
 	log.Debugf("start：")
 	app := &cli.App{
