@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
+	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
 )
+
+var log = logger.NewLogger("block_parser", logger.LevelDebug)
 
 func (b *BlockParser) registerTransactionHandle() {
 	b.mapTransactionHandle = make(map[string]FuncTransactionHandle)

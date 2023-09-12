@@ -1,27 +1,27 @@
 package config
 
 import (
-	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
+	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/fsnotify/fsnotify"
 	"github.com/scorpiotzh/toolib"
 )
 
 var (
 	Cfg CfgServer
-	//log = mytool.Log(nil).NewLogger("config", mytool.Log(nil).LevelDebug)
+	log = logger.NewLogger("config", logger.LevelDebug)
 )
 
 func InitCfg(configFilePath string) error {
 	if configFilePath == "" {
 		configFilePath = "../config/config.yaml"
 	}
-	tool.Log(nil).Info("config file：", configFilePath)
+	log.Info("config file：", configFilePath)
 	if err := toolib.UnmarshalYamlFile(configFilePath, &Cfg); err != nil {
 		return fmt.Errorf("UnmarshalYamlFile err:%s", err.Error())
 	}
-	tool.Log(nil).Info("config file：ok")
+	log.Info("config file：ok")
 	return nil
 }
 
@@ -30,11 +30,11 @@ func AddCfgFileWatcher(configFilePath string) (*fsnotify.Watcher, error) {
 		configFilePath = "../config/config.yaml"
 	}
 	return toolib.AddFileWatcher(configFilePath, func() {
-		tool.Log(nil).Info("update config file：", configFilePath)
+		log.Info("update config file：", configFilePath)
 		if err := toolib.UnmarshalYamlFile(configFilePath, &Cfg); err != nil {
-			tool.Log(nil).Error("UnmarshalYamlFile err:", err.Error())
+			log.Error("UnmarshalYamlFile err:", err.Error())
 		}
-		tool.Log(nil).Info("update config file：ok")
+		log.Info("update config file：ok")
 	})
 }
 
@@ -73,6 +73,7 @@ type CfgServer struct {
 	Notify  struct {
 		LarkErrorKey   string `json:"lark_error_key" yaml:"lark_error_key"`
 		DiscordWebhook string `json:"discord_webhook" yaml:"discord_webhook"`
+		SentryDsn      string `json:"sentry_dsn" yaml:"sentry_dsn"`
 	} `json:"notify" yaml:"notify"`
 	Chain struct {
 		CkbUrl             string `json:"ckb_url" yaml:"ckb_url"`

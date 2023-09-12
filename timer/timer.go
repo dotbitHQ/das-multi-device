@@ -3,14 +3,17 @@ package timer
 import (
 	"context"
 	"das-multi-device/dao"
-	"das-multi-device/tool"
 	"github.com/dotbitHQ/das-lib/core"
 	"github.com/dotbitHQ/das-lib/dascache"
+	"github.com/dotbitHQ/das-lib/http_api"
+	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/dotbitHQ/das-lib/txbuilder"
 	"github.com/robfig/cron/v3"
 	"sync"
 	"time"
 )
+
+var log = logger.NewLogger("timer", logger.LevelDebug)
 
 type TxTimer struct {
 	ctx           context.Context
@@ -47,17 +50,18 @@ func (t *TxTimer) Run() error {
 	tickerRejected := time.NewTicker(time.Minute * 3)
 	t.wg.Add(5)
 	go func() {
+		defer http_api.RecoverPanic()
 		for {
 			select {
 			case <-tickerRejected.C:
-				tool.Log(nil).Info("checkRejected start ...")
+				log.Info("checkRejected start ...")
 				if err := t.checkRejected(); err != nil {
-					tool.Log(nil).Error("checkRejected err: ", err.Error())
+					log.Error("checkRejected err: ", err.Error())
 				}
-				tool.Log(nil).Info("checkRejected end ...")
+				log.Info("checkRejected end ...")
 
 			case <-t.ctx.Done():
-				tool.Log(nil).Info("timer done")
+				log.Info("timer done")
 				t.wg.Done()
 				return
 			}

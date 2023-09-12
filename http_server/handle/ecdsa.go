@@ -3,7 +3,6 @@ package handle
 import (
 	"crypto/elliptic"
 	"crypto/sha256"
-	"das-multi-device/tool"
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
@@ -40,16 +39,16 @@ func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
 
 	if err = h.doEcrecover(req, &apiResp); err != nil {
-		tool.Log(ctx).Error("doEcrecover err:", err.Error(), funcName, clientIp)
+		log.Error("doEcrecover err:", err.Error(), funcName, clientIp, ctx)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -141,16 +140,16 @@ func (h *HttpHandle) VerifyWebauthnSign(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		tool.Log(ctx).Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	tool.Log(ctx).Info("ApiReq:", funcName, clientIp, toolib.JsonString(req))
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
 
 	if err = h.doVerifyWebauthnSign(req, &apiResp); err != nil {
-		tool.Log(ctx).Error("doVerifyWebauthnSign err:", err.Error(), funcName, clientIp)
+		log.Error("doVerifyWebauthnSign err:", err.Error(), funcName, clientIp, ctx)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -177,7 +176,7 @@ func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiR
 			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
 			return err
 		}
-		tool.Log(nil).Info("-----", masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
+		log.Info("-----", masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
 		idx, err = h.dasCore.GetIdxOfKeylist(masterAddressHex, backupAddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "GetIdxOfKeylist err: "+err.Error())

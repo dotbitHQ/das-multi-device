@@ -3,7 +3,6 @@ package timer
 import (
 	"das-multi-device/config"
 	"das-multi-device/internal"
-	"das-multi-device/tool"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/nervosnetwork/ckb-sdk-go/types"
@@ -28,13 +27,13 @@ func (t *TxTimer) checkRejected() error {
 		if err != nil {
 			return err
 		}
-		tool.Log(nil).Info("checkRejected:", v.ChainType, v.Address, v.Action, v.Outpoint, res.TxStatus.Status)
+		log.Info("checkRejected:", v.ChainType, v.Address, v.Action, v.Outpoint, res.TxStatus.Status)
 		if res.TxStatus.Status != types.TransactionStatusCommitted && res.TxStatus.Status != types.TransactionStatusPending && res.TxStatus.Status != types.TransactionStatusProposed {
 			rejectedNum++
 		}
 		if res.TxStatus.Status == types.TransactionStatusCommitted {
 			if block, err := t.dasCore.Client().GetBlock(t.ctx, *res.TxStatus.BlockHash); err == nil && block != nil && block.Header != nil {
-				tool.Log(nil).Info("UpdatePendingToConfirm:", v.Id)
+				log.Info("UpdatePendingToConfirm:", v.Id)
 				_ = t.dbDao.UpdatePendingToConfirm(v.Id, block.Header.Number, block.Header.Timestamp)
 			}
 		}
