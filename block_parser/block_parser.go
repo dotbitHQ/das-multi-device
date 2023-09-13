@@ -91,7 +91,7 @@ func (b *BlockParser) initCurrentBlockNumber(currentBlockNumber uint64) error {
 }
 
 func (b *BlockParser) parserSubMode() error {
-	log.Info("parserSubMode:", b.CurrentBlockNumber)
+	log.Debug("parserSubMode:", b.CurrentBlockNumber)
 	block, err := b.DasCore.Client().GetBlockByNumber(b.Ctx, b.CurrentBlockNumber)
 	if err != nil {
 		return fmt.Errorf("GetBlockByNumber err: %s", err.Error())
