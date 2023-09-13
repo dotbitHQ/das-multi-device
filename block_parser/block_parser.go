@@ -143,9 +143,6 @@ func (b *BlockParser) parserConcurrencyMode() error {
 		}
 		blockHash := block.Header.Hash.Hex()
 		parentHash := block.Header.ParentHash.Hex()
-		fmt.Println("111")
-		k := 0
-		fmt.Println(1 / k)
 		log.Debug("parserConcurrencyMode:", b.CurrentBlockNumber, blockHash, parentHash)
 
 		if err = b.parsingBlockData(block); err != nil {
