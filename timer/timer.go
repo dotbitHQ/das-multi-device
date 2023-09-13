@@ -54,14 +54,14 @@ func (t *TxTimer) Run() error {
 		for {
 			select {
 			case <-tickerRejected.C:
-				log.Info("checkRejected start ...")
+				log.Debug("checkRejected start ...")
 				if err := t.checkRejected(); err != nil {
 					log.Error("checkRejected err: ", err.Error())
 				}
-				log.Info("checkRejected end ...")
+				log.Debug("checkRejected end ...")
 
 			case <-t.ctx.Done():
-				log.Info("timer done")
+				log.Debug("timer done")
 				t.wg.Done()
 				return
 			}

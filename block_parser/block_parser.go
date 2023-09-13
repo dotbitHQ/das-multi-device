@@ -57,13 +57,13 @@ func (b *BlockParser) Run() error {
 						if err = b.parserConcurrencyMode(); err != nil {
 							log.Error("parserConcurrencyMode err:", err.Error(), b.CurrentBlockNumber)
 						}
-						log.Warn("parserConcurrencyMode time:", time.Since(nowTime).Seconds())
+						log.Debug("parserConcurrencyMode time:", time.Since(nowTime).Seconds())
 					} else if b.CurrentBlockNumber < (latestBlockNumber - b.ConfirmNum) { // check rollback
 						nowTime := time.Now()
 						if err = b.parserSubMode(); err != nil {
 							log.Error("parserSubMode err:", err.Error(), b.CurrentBlockNumber)
 						}
-						log.Warn("parserSubMode time:", time.Since(nowTime).Seconds())
+						log.Debug("parserSubMode time:", time.Since(nowTime).Seconds())
 					} else {
 						log.Debug("RunParser:", b.CurrentBlockNumber, latestBlockNumber)
 						time.Sleep(time.Second * 10)
@@ -98,7 +98,7 @@ func (b *BlockParser) parserSubMode() error {
 	} else {
 		blockHash := block.Header.Hash.Hex()
 		parentHash := block.Header.ParentHash.Hex()
-		log.Info("parserSubMode:", b.CurrentBlockNumber, blockHash, parentHash)
+		log.Debug("parserSubMode:", b.CurrentBlockNumber, blockHash, parentHash)
 		if fork, err := b.checkFork(parentHash); err != nil {
 			return fmt.Errorf("checkFork err: %s", err.Error())
 		} else if fork {

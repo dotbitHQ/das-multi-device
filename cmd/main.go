@@ -36,7 +36,7 @@ var (
 )
 
 func main() {
-	log.Debugf("start：")
+	log.Debug("start：")
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -77,14 +77,14 @@ func runServer(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("NewGormDB err: %s", err.Error())
 	}
-	log.Infof("db ok")
+	log.Debug("db ok")
 	// redis
 	red, err := toolib.NewRedisClient(config.Cfg.Cache.Redis.Addr, config.Cfg.Cache.Redis.Password, config.Cfg.Cache.Redis.DbNum)
 	if err != nil {
-		log.Info("NewRedisClient err: %s", err.Error())
+		log.Errorf("NewRedisClient err: %s", err.Error())
 		//return fmt.Errorf("NewRedisClient err:%s", err.Error())
 	} else {
-		log.Info("redis ok")
+		log.Debug("redis ok")
 	}
 
 	rc := cache.Initialize(red)
@@ -114,7 +114,7 @@ func runServer(ctx *cli.Context) error {
 	if err := bp.Run(); err != nil {
 		return fmt.Errorf("block parser err: %s", err.Error())
 	}
-	log.Info("block parser ok")
+	log.Debug("block parser ok")
 
 	// http
 	hs, err := http_server.Initialize(http_server.HttpServerParams{
@@ -132,7 +132,7 @@ func runServer(ctx *cli.Context) error {
 		return fmt.Errorf("http server Initialize err:%s", err.Error())
 	}
 	hs.Run()
-	log.Info("httpserver ok")
+	log.Debug("httpserver ok")
 	// ============= service end =============
 	toolib.ExitMonitoring(func(sig os.Signal) {
 		log.Warn("ExitMonitoring:", sig.String())
