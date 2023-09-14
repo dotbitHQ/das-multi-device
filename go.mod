@@ -3,8 +3,9 @@ module das-multi-device
 go 1.18
 
 require (
-	github.com/dotbitHQ/das-lib v1.1.1-0.20230913182612-2210be43cac3
+	github.com/dotbitHQ/das-lib v1.1.1-0.20230914071938-34771680aced
 	github.com/fsnotify/fsnotify v1.5.4
+	github.com/getsentry/sentry-go v0.24.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gorilla/websocket v1.5.0
@@ -35,7 +36,6 @@ require (
 	github.com/ethereum/go-ethereum v1.10.26 // indirect
 	github.com/fbsobreira/gotron-sdk v0.0.0-20230323193002-7843d2a7548e // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/getsentry/sentry-go v0.24.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
