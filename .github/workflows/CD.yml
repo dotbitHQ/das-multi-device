@@ -19,10 +19,20 @@ jobs:
           workflow_conclusion: success
           run_id: ${{ github.event.workflow_run.id }}
           run_number: ${{ github.event.workflow_run.run_number }}
-          name: das_multi_device
-      - name: Stop Service
-        run: ssh root@backendtest 'supervisorctl stop das_multi_device_svr'
-      - name: Rsync
-        run: rsync -a das_multi_device root@backendtest:/mnt/das/server/das_multi_device/das_multi_device
-      - name: Restart Service
-        run: ssh root@backendtest 'chmod +x /mnt/das/server/das_multi_device/das_multi_device && supervisorctl start das_multi_device_svr'
+          name: das_multi_device_${{ github.event.workflow_run.head_commit.id }}
+      - name: Deploy
+        run: |
+          host_name=""
+          branch="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$branch" == "dev" ]]; then
+            host_name="backendtest"
+          elif [[ "$branch" == "test3" ]]; then
+            host_name="backendtest3"
+          else
+            echo "Skipping build and deploy for branch ${branch}"
+            exit 1
+          fi
+          
+          rsync -a das_multi_device root@"$host_name":/mnt/das/server/das_multi_device/das_multi_device
+          ssh root@"$host_name" 'chmod +x /mnt/das/server/das_multi_device/das_multi_device'
+          ssh root@"$host_name" 'supervisorctl restart das_multi_device_svr'
