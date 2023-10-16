@@ -166,37 +166,6 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			if err = h.dbDao.CreatePending(&pending); err != nil {
 				log.Error("CreatePending err: ", err.Error(), toolib.JsonString(pending))
 			}
-			if sic.Notes != "" && sic.Avatar != 0 && sic.BackupCid != "" {
-				LoginAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
-					ChainType:     common.ChainTypeWebauthn,
-					AddressNormal: sic.Address, //Signed address
-				})
-				if err != nil {
-					apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
-					return err
-				}
-				masterCid := common.Bytes2Hex(LoginAddressHex.AddressPayload[:10])
-				avatarNotes := make([]tables.TableAvatarNotes, 0)
-				//backup
-				avatarNotes = append(avatarNotes, tables.TableAvatarNotes{
-					MasterCid: masterCid,
-					SlaveCid:  sic.BackupCid,
-					Avatar:    sic.Avatar,
-					Notes:     sic.Notes,
-					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
-				})
-				//master
-				avatarNotes = append(avatarNotes, tables.TableAvatarNotes{
-					MasterCid: masterCid,
-					SlaveCid:  masterCid,
-					Avatar:    0, //default
-					Notes:     sic.MasterNotes,
-					Outpoint:  common.OutPoint2String(hash.Hex(), 0),
-				})
-				if err = h.dbDao.CreateAvatarNotes(avatarNotes); err != nil {
-					log.Error("CreateAvatarNotes err: ", err.Error(), toolib.JsonString(avatarNotes))
-				}
-			}
 
 		}
 	}
