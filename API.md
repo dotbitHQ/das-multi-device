@@ -8,10 +8,12 @@
     * [Transaction Send](#transaction-send)
     * [Transaction Status](#transaction-status)
     * [Webauthn Verify](#webautn-verify)
+    * [Add Cid Info](#add-cid-info)
 ## API LIST
 test api url https://test-webauthn-api.did.id
 
 prod api url https://webauthn-api.did.id
+
 ### Ecdsa Ecrecover
 
 #### Request
@@ -333,5 +335,32 @@ prod api url https://webauthn-api.did.id
   "data": {
     "is_valid": true
   }
+}
+```
+
+### Add Cid Info
+
+#### Request
+* path: /v1/webauthn/add-cid-info
+* params:
+  * ckb_addr: ckb addr
+  * cid: cid
+  * notes: device notes
+  * device device type
+```json
+{
+    "ckb_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggql2ysqakcxwgzt6ugh7kp2c5stuyvdp7y5yq04zgqwmvr8yp9awytltq4v2g97zxxslz2aqmhst",
+    "cid":"d44803b6c19c812f5c45",
+    "notes":"bbb",
+    "device":"ios"
+
+}
+```
+#### Response
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": true
 }
 ```
