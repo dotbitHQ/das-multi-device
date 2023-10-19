@@ -53,6 +53,7 @@ type CfgServer struct {
 		Servers []Server `json:"servers" yaml:"servers"`
 	} `json:"slb" yaml:"slb"`
 	Server struct {
+		Name                   string            `json:"name" yaml:"name"`
 		IsUpdate               bool              `json:"is_update" yaml:"is_update"`
 		Net                    common.DasNetType `json:"net" yaml:"net"`
 		HttpServerAddr         string            `json:"http_server_addr" yaml:"http_server_addr"`
@@ -67,6 +68,7 @@ type CfgServer struct {
 		PushLogUrl             string            `json:"push_log_url" yaml:"push_log_url"`
 		PushLogIndex           string            `json:"push_log_index" yaml:"push_log_index"`
 		NotExit                bool              `json:"not_exit" yaml:"not_exit"`
+		PrometheusPushGateway  string            `json:"prometheus_push_gateway" yaml:"prometheus_push_gateway"`
 	} `json:"server" yaml:"server"`
 
 	Origins []string `json:"origins" yaml:"origins"`

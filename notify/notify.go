@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"das-multi-device/prometheus"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/parnurzeal/gorequest"
@@ -55,6 +56,13 @@ func SendLarkTextNotify(key, title, text string) {
 	} else {
 		log.Info("sendLarkTextNotify req:", body)
 	}
+}
+
+func SendLarkErrNotify(title, text string) {
+	if title == "" || text == "" {
+		return
+	}
+	prometheus.Tools.Metrics.ErrNotify().WithLabelValues(title, text).Inc()
 }
 
 func GetLarkTextNotifyStr(funcName, keyInfo, errInfo string) string {
