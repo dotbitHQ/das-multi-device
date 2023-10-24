@@ -16,6 +16,19 @@ type TableAvatarNotes struct {
 	UpdatedAt      time.Time `json:"updated_at" gorm:"column:updated_at;type:timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''"`
 }
 
+//cid notes device
+//数据迁移
+//删除avatar 新增device（ios ipad ..）
+// cida cidb  bbb => delete
+// cida cida  aaa => cida 0 aaa
+
+// cidc cidc  ccc
+
+// cidc cidb  kjkj
+
+//api
+//添加cid（ckbaddr） nots device //不能修改
+
 const (
 	TableNameAvatarNotes = "t_avatar_notes"
 )

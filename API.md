@@ -8,10 +8,12 @@
     * [Transaction Send](#transaction-send)
     * [Transaction Status](#transaction-status)
     * [Webauthn Verify](#webautn-verify)
+    * [Add Cid Info](#add-cid-info)
 ## API LIST
 test api url https://test-webauthn-api.did.id
 
 prod api url https://webauthn-api.did.id
+
 ### Ecdsa Ecrecover
 
 #### Request
@@ -116,17 +118,11 @@ prod api url https://webauthn-api.did.id
     * master_ckb_address: Authorized CKB address (string, necessary)
     * slave_ckb_address: CKB address to be authorized (string, necessary)
     * operation: add: add autorize，delete：delete autorize (string necessary)
-    * avatar: avatar of backup address
-    * notes: notes of backup address
-    * master_notes: master notes
 ```json
 {
   "master_ckb_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m",
   "slave_ckb_address":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"
-  "operation" : "add",
-  "avatar": 2,
-  "notes": "phone-1",
-  "master_notes":"mmm4"
+  "operation" : "add"
 }
 ```
 
@@ -164,9 +160,10 @@ prod api url https://webauthn-api.did.id
 #### Response
   * can_authorize: permission to enable backup
   * master_notes: master notes
+  * master_device: master device
   * ckb_address
     * address: ckb address
-    * avatar: avatar of backup address
+    * device: device of backup address
     * notes: notes of backup address
 ```json
 {
@@ -175,10 +172,11 @@ prod api url https://webauthn-api.did.id
   "data": {
     "can_authorize" :1,
     "master_notes": "mmm4",
+    "master_device": "ipad",
     "ckb_address": [
       {
         "address": "ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggqu4qyfuzauwmj9k6qeenhmyt039rhu5xaqyqw2szy7pw78dezmdqvuemaj9hcj3m72rwsv94j9m"
-        "avatar": 2,
+        "device": "ios",
         "notes": "mac-01"
       }
     ]
@@ -333,5 +331,32 @@ prod api url https://webauthn-api.did.id
   "data": {
     "is_valid": true
   }
+}
+```
+
+### Add Cid Info
+
+#### Request
+* path: /v1/webauthn/add-cid-info
+* params:
+  * ckb_addr: ckb addr
+  * cid: cid
+  * notes: device notes
+  * device device type
+```json
+{
+    "ckb_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggql2ysqakcxwgzt6ugh7kp2c5stuyvdp7y5yq04zgqwmvr8yp9awytltq4v2g97zxxslz2aqmhst",
+    "cid":"d44803b6c19c812f5c45",
+    "notes":"bbb",
+    "device":"ios"
+
+}
+```
+#### Response
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": true
 }
 ```
