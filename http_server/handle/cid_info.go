@@ -61,7 +61,7 @@ func (h *HttpHandle) doAddCidInfo(req *ReqAddCidInfo, apiResp *http_api.ApiResp)
 
 	notes := req.Notes
 	device := req.Device
-	if len(notes) > 20 || len(device) > 20 {
+	if len(notes) > 40 || len(device) > 40 {
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "notes or device error")
 		return
 	}
