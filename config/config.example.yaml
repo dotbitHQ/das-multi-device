@@ -1,4 +1,5 @@
 server:
+  name: "passkey"
   is_update: false
   net: 2 # 1 mainnet 2 testnet
   http_server_addr: ":8125"
@@ -8,6 +9,7 @@ server:
   server_private_key: ""
   pay_server_address: ""
   pay_private: ""
+  prometheus_push_gateway: "http://127.0.0.1:9091"
 origins:
   - ""
 notify:

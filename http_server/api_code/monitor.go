@@ -2,92 +2,38 @@ package api_code
 
 import (
 	"bytes"
-	"das-multi-device/config"
+	"das-multi-device/prometheus"
 	"encoding/json"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/http_api"
 	"github.com/dotbitHQ/das-lib/http_api/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/parnurzeal/gorequest"
 	"net/http"
 	"time"
 )
 
 var log = logger.NewLogger("api_code", logger.LevelDebug)
 
-type ReqPushLog struct {
-	Index   string        `json:"index"`
-	Method  string        `json:"method"`
-	Ip      string        `json:"ip"`
-	Latency time.Duration `json:"latency"`
-	ErrMsg  string        `json:"err_msg"`
-	ErrNo   int           `json:"err_no"`
-}
-
-func PushLog(url string, req ReqPushLog) {
-	if url == "" {
-		return
-	}
-	go func() {
-		resp, _, errs := gorequest.New().Post(url).SendStruct(&req).End()
-		if len(errs) > 0 {
-			log.Error("PushLog err:", errs)
-		} else if resp.StatusCode != http.StatusOK {
-			log.Error("PushLog StatusCode:", resp.StatusCode)
-		}
-	}()
-}
-
 func DoMonitorLog(method string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		startTime := time.Now()
-		ip := getClientIp(ctx)
+		//ip := getClientIp(ctx)
 
 		blw := &bodyWriter{body: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
 		ctx.Writer = blw
 		ctx.Next()
 		statusCode := ctx.Writer.Status()
 
+		var resp http_api.ApiResp
 		if statusCode == http.StatusOK && blw.body.String() != "" {
-			var resp http_api.ApiResp
 			if err := json.Unmarshal(blw.body.Bytes(), &resp); err == nil {
 				if resp.ErrNo != http_api.ApiCodeSuccess {
 					log.Warn("DoMonitorLog:", method, resp.ErrNo, resp.ErrMsg)
 				}
-				//if method == MethodTransactionStatus && resp.ErrNo == ApiCodeTransactionNotExist {
-				//	resp.ErrNo = ApiCodeSuccess
-				//} else if method == MethodOrderDetail && resp.ErrNo == ApiCodeOrderNotExist {
-				//	resp.ErrNo = ApiCodeSuccess
-				//} else if method == MethodAccountDetail && resp.ErrNo == ApiCodeAccountNotExist {
-				//	resp.ErrNo = ApiCodeSuccess
-				//}
-				pushLog := ReqPushLog{
-					Index:   config.Cfg.Server.PushLogIndex,
-					Method:  method,
-					Ip:      ip,
-					Latency: time.Since(startTime),
-					ErrMsg:  resp.ErrMsg,
-					ErrNo:   resp.ErrNo,
-				}
-				PushLog(config.Cfg.Server.PushLogUrl, pushLog)
 			}
 		}
+		prometheus.Tools.Metrics.Api().WithLabelValues(method, fmt.Sprint(statusCode), fmt.Sprint(resp.ErrNo), resp.ErrMsg).Observe(time.Since(startTime).Seconds())
 	}
-}
-
-func DoMonitorLogRpc(apiResp *http_api.ApiResp, method, clientIp string, startTime time.Time) {
-	pushLog := ReqPushLog{
-		Index:   config.Cfg.Server.PushLogIndex,
-		Method:  method,
-		Ip:      clientIp,
-		Latency: time.Since(startTime),
-		ErrMsg:  apiResp.ErrMsg,
-		ErrNo:   apiResp.ErrNo,
-	}
-	if apiResp.ErrNo != http_api.ApiCodeSuccess {
-		log.Warn("DoMonitorLog:", method, apiResp.ErrNo, apiResp.ErrMsg)
-	}
-	PushLog(config.Cfg.Server.PushLogUrl, pushLog)
 }
 
 func getClientIp(ctx *gin.Context) string {

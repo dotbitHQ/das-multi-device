@@ -7,6 +7,7 @@ import (
 	"das-multi-device/config"
 	"das-multi-device/dao"
 	"das-multi-device/http_server"
+	"das-multi-device/prometheus"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
 	"github.com/dotbitHQ/das-lib/core"
@@ -72,6 +73,11 @@ func runServer(ctx *cli.Context) error {
 		return fmt.Errorf("SentryInit err: %s", err.Error())
 	}
 	defer http_api.RecoverPanic()
+
+	// prometheus
+	prometheus.Init()
+	prometheus.Tools.Run()
+
 	// db
 	dbDao, err := dao.NewGormDB(config.Cfg.DB.Mysql, config.Cfg.DB.ParserMysql, true)
 	if err != nil {
