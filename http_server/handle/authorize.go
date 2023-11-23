@@ -536,7 +536,7 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
 
 	if err = h.doAuthorizeInfo(req, &apiResp); err != nil {
-		log.Error("doIfEnableAuthorize err:", err.Error(), funcName, clientIp, ctx)
+		log.Error("doAuthorizeInfo err:", err.Error(), funcName, clientIp, ctx)
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -569,10 +569,12 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		outpoint := common.String2OutPointStruct(res.Outpoint)
 		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
 		if err != nil {
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetTransaction err")
 			return err
 		}
 		builder, err := witness.WebAuthnKeyListDataBuilderFromTx(tx.Transaction, common.DataTypeNew)
 		if err != nil {
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "WebAuthnKeyListDataBuilderFromTx err")
 			return err
 		}
 		keys := builder.DeviceKeyListCellData.Keys()
@@ -596,6 +598,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 				AddressHex:        common.CalculateWebauthnPayload(cid1, pk1),
 			})
 			if err != nil {
+				apiResp.ApiRespErr(http_api.ApiCodeError500, "HexToNormal err")
 				return err
 			}
 			temp.Address = addrNormal.AddressNormal
