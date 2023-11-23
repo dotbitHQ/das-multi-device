@@ -174,7 +174,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	}
 	txParams.Witnesses = append(txParams.Witnesses, actionWitness)
 
-	res, err := h.dasCore.Client().GetTransaction(h.ctx, keyListCfgOutPoint.TxHash)
+	res, err := h.dasCore.Client().GetTransaction(context.Background(), keyListCfgOutPoint.TxHash)
 	if err != nil {
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}

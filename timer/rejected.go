@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"context"
 	"das-multi-device/config"
 	"das-multi-device/internal"
 	"fmt"
@@ -23,7 +24,7 @@ func (t *TxTimer) checkRejected() error {
 	}
 	rejectedNum := 0
 	for _, v := range list {
-		res, err := t.dasCore.Client().GetTransaction(t.ctx, common.String2OutPointStruct(v.Outpoint).TxHash)
+		res, err := t.dasCore.Client().GetTransaction(context.Background(), common.String2OutPointStruct(v.Outpoint).TxHash)
 		if err != nil {
 			return err
 		}
