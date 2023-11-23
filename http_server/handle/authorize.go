@@ -567,6 +567,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 			return fmt.Errorf("outpoint is empty")
 		}
 		outpoint := common.String2OutPointStruct(res.Outpoint)
+		log.Info("ctx: ", h.ctx, " hash:", outpoint.TxHash)
 		tx, err := h.dasCore.Client().GetTransaction(h.ctx, outpoint.TxHash)
 		if err != nil {
 			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetTransaction err")
