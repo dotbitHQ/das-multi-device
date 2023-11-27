@@ -59,7 +59,7 @@ func (h *HttpHandle) doCidInfo(req *ReqCidInfo, apiResp *http_api.ApiResp) (err 
 	var oldCids []OldCid
 	oldCids, err = h.getOldCid()
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return err
 	}
 	for _, v := range oldCids {
@@ -74,12 +74,12 @@ func (h *HttpHandle) doCidInfo(req *ReqCidInfo, apiResp *http_api.ApiResp) (err 
 		pubkey.Curve = curve
 		xBytes, err := hex.DecodeString(req.Pubkey.X)
 		if err != nil {
-			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 			return err
 		}
 		yBytes, err := hex.DecodeString(req.Pubkey.Y)
 		if err != nil {
-			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 			return err
 		}
 		pubkey.X = new(big.Int).SetBytes(xBytes)
@@ -143,7 +143,7 @@ func (h *HttpHandle) doQueryCid(req *ReqQueryCid, apiResp *http_api.ApiResp) (er
 
 	oldCids, err = h.getOldCid()
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return err
 	}
 	for _, v := range oldCids {
@@ -196,7 +196,7 @@ func (h *HttpHandle) doAddTestCid(req *ReqAddTestCid, apiResp *http_api.ApiResp)
 
 	oldCids, err = h.getOldCid()
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return
 	}
 	for _, v := range oldCids {
@@ -216,7 +216,7 @@ func (h *HttpHandle) doAddTestCid(req *ReqAddTestCid, apiResp *http_api.ApiResp)
 	//add
 	content, err := json.Marshal(oldCids)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "json.Marshal err")
 		return
 	}
 	err = h.updateOldCid(string(content))
@@ -259,7 +259,7 @@ func (h *HttpHandle) doCoverCid(req *ReqCoverCid, apiResp *http_api.ApiResp) (er
 	var oldCids []OldCid
 	oldCids, err = h.getOldCid()
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid")
 		return
 	}
 	tag := false
@@ -276,7 +276,7 @@ func (h *HttpHandle) doCoverCid(req *ReqCoverCid, apiResp *http_api.ApiResp) (er
 	//update
 	content, err := json.Marshal(oldCids)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "json.Marshal err")
 		return
 	}
 	err = h.updateOldCid(string(content))

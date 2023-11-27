@@ -71,7 +71,7 @@ func (h *HttpHandle) checkSystemUpgrade(apiResp *http_api.ApiResp) error {
 	}
 	ConfigCellDataBuilder, err := h.dasCore.ConfigCellDataBuilderByTypeArgs(common.ConfigCellTypeArgsMain)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "ConfigCellDataBuilderByTypeArgs err")
 		return fmt.Errorf("ConfigCellDataBuilderByTypeArgs err: %s", err.Error())
 	}
 	status, _ := ConfigCellDataBuilder.Status()
@@ -81,31 +81,11 @@ func (h *HttpHandle) checkSystemUpgrade(apiResp *http_api.ApiResp) error {
 	}
 	ok, err := h.dasCore.CheckContractStatusOK(common.DasContractNameAccountCellType)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "CheckContractStatusOK err")
 		return fmt.Errorf("CheckContractStatusOK err: %s", err.Error())
 	} else if !ok {
 		apiResp.ApiRespErr(http_api.ApiCodeSystemUpgrade, "The service is under maintenance, please try again later.")
 		return fmt.Errorf("contract system upgrade")
 	}
 	return nil
-}
-
-func checkChainType(chainType common.ChainType) bool {
-	switch chainType {
-	case common.ChainTypeTron, common.ChainTypeMixin, common.ChainTypeEth, common.ChainTypeDogeCoin:
-		return true
-	}
-	return false
-}
-
-func checkBalanceErr(err error, apiResp *http_api.ApiResp) {
-	if err == core.ErrRejectedOutPoint {
-		apiResp.ApiRespErr(http_api.ApiCodeRejectedOutPoint, err.Error())
-	} else if err == core.ErrNotEnoughChange {
-		apiResp.ApiRespErr(http_api.ApiCodeNotEnoughChange, err.Error())
-	} else if err == core.ErrInsufficientFunds {
-		apiResp.ApiRespErr(http_api.ApiCodeInsufficientBalance, err.Error())
-	} else {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
-	}
 }

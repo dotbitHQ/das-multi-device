@@ -162,9 +162,6 @@ func (b *BlockParser) parserConcurrencyMode() error {
 }
 
 func (b *BlockParser) parsingBlockData(block *types.Block) error {
-	if err := b.checkContractVersion(); err != nil {
-		return err
-	}
 	for _, tx := range block.Transactions {
 		txHash := tx.Hash.Hex()
 		blockNumber := block.Header.Number

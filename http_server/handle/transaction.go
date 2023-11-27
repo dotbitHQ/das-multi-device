@@ -110,7 +110,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 
 		idx, err := h.dasCore.GetIdxOfKeylistByOutPoint(keyListCfgOutPoint, signAddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetIdxOfKeylistByOp err: "+err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeError500, "GetIdxOfKeylistByOp err")
 			return err
 		}
 		if idx == -1 {
@@ -139,14 +139,14 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			strings.Contains(err.Error(), "Dead(OutPoint(") ||
 			strings.Contains(err.Error(), "Unknown(OutPoint(") ||
 			(strings.Contains(err.Error(), "getInputCell") && strings.Contains(err.Error(), "not live")) {
-			apiResp.ApiRespErr(http_api.ApiCodeRejectedOutPoint, err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeRejectedOutPoint, "SendTransaction err")
 			return fmt.Errorf("SendTransaction err: %s", err.Error())
 		}
 		if strings.Contains(err.Error(), "-102 in the page") {
 			apiResp.ApiRespErr(http_api.ApiCodeOperationFrequent, "account frequency limit")
 			return fmt.Errorf("SendTransaction err: %s", err.Error())
 		}
-		apiResp.ApiRespErr(http_api.ApiCodeError500, "send tx err:"+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "send tx err")
 		return fmt.Errorf("SendTransaction err: %s", err.Error())
 	} else {
 		resp.Hash = hash.Hex()
