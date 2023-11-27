@@ -163,12 +163,12 @@ func (h *HttpHandle) doCalculateCkbAddr(req *ReqCaculateCkbAddr, apiResp *http_a
 	pubkey.Curve = curve
 	xBytes, err := hex.DecodeString(req.Pubkey.X)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return err
 	}
 	yBytes, err := hex.DecodeString(req.Pubkey.Y)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		return err
 	}
 	pubkey.X = new(big.Int).SetBytes(xBytes)
