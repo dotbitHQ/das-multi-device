@@ -179,7 +179,7 @@ func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiR
 		log.Info("-----", masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
 		idx, err = h.dasCore.GetIdxOfKeylist(masterAddressHex, backupAddressHex)
 		if err != nil {
-			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "GetIdxOfKeylist err: "+err.Error())
+			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "GetIdxOfKeylist err")
 			return fmt.Errorf("GetIdxOfKeylist err: %s", err.Error())
 		}
 		if idx == -1 {
@@ -193,7 +193,7 @@ func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiR
 	address := backupAddressHex.AddressHex
 	verifyRes, _, err := http_api.VerifySignature(signType, signMsg, signature, address)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeSignError, "VerifySignature err: "+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeSignError, "VerifySignature err")
 		return fmt.Errorf("VerifySignature err: %s", err.Error())
 	}
 	resp.IsValid = verifyRes

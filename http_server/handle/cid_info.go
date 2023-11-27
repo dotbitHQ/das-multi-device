@@ -48,7 +48,7 @@ func (h *HttpHandle) doAddCidInfo(req *ReqAddCidInfo, apiResp *http_api.ApiResp)
 		AddressNormal: req.CkbAddr,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "NormalToHex err")
 		return err
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])

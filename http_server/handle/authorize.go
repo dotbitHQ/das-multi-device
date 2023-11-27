@@ -73,7 +73,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		AddressNormal: req.MasterCkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "NormalToHex err")
 		return err
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
@@ -117,7 +117,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		AddressNormal: req.SlaveCkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "NormalToHex err")
 		return err
 	}
 
@@ -135,11 +135,11 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 
 	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, "build tx err: "+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "build tx err")
 		return fmt.Errorf("buildAddAuthorizeTx err: %s", err.Error())
 	}
 	if si, err := h.buildWebauthnTx(&reqBuildWebauthnTx, txParams); err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, "buildWebauthnTx tx err: "+err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "buildWebauthnTx tx err")
 		return fmt.Errorf("buildWebauthnTx: %s", err.Error())
 	} else {
 		resp.SignInfo = *si
@@ -549,7 +549,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 		AddressNormal: req.CkbAddress,
 	})
 	if err != nil {
-		apiResp.ApiRespErr(http_api.ApiCodeError500, err.Error())
+		apiResp.ApiRespErr(http_api.ApiCodeError500, "NormalToHex err")
 		return err
 	}
 	masterCid := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
