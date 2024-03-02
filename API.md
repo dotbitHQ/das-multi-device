@@ -9,6 +9,7 @@
     * [Transaction Status](#transaction-status)
     * [Webauthn Verify](#webautn-verify)
     * [Add Cid Info](#add-cid-info)
+    * [Store Cid Pk](#store-cid-pk)
 ## API LIST
 test api url https://test-webauthn-api.did.id
 
@@ -349,6 +350,34 @@ prod api url https://webauthn-api.did.id
     "cid":"d44803b6c19c812f5c45",
     "notes":"bbb",
     "device":"ios"
+
+}
+```
+#### Response
+```json
+{
+  "err_no": 0,
+  "err_msg": "",
+  "data": true
+}
+```
+
+
+### Store Cid Pk
+
+#### Request
+* path: /v1/webauthn/store-cid-pk
+* params:
+  * sign_addr: sign address
+  * cid: cid
+  * msg: sign msg
+  * signature: signature
+```json
+{
+    "sign_addr":"ckt1qqexmutxu0c2jq9q4msy8cc6fh4q7q02xvr7dc347zw3ks3qka0m6qggql2ysqakcxwgzt6ugh7kp2c5stuyvdp7y5yq04zgqwmvr8yp9awytltq4v2g97zxxslz2aqmhst",
+    "cid":"d44803b6c19c812f5c45",
+    "msg":"",
+    "signature":""
 
 }
 ```
