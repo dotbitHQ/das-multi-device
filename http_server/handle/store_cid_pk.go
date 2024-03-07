@@ -59,7 +59,7 @@ func (h *HttpHandle) doStoreCidPk(req *ReqStoreCidPk, apiResp *http_api.ApiResp)
 	signMsg := req.Msg
 	signature := req.Signature
 	address := signAddressHex.AddressHex
-	if address[20:] != hex.EncodeToString(common.CalculateCid1(req.Cid)) {
+	if address[:20] != hex.EncodeToString(common.CalculateCid1(req.Cid)) {
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "cid err")
 		return nil
 	}
