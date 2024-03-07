@@ -13,7 +13,7 @@ func (d *DbDao) GetCidPk(cid1 string) (cidPk tables.TableCidPk, err error) {
 func (d *DbDao) InsertCidPk(data tables.TableCidPk) (err error) {
 	if err := d.db.Clauses(clause.OnConflict{
 		DoUpdates: clause.AssignmentColumns([]string{
-			"OriginPk",
+			"origin_pk",
 		}),
 	}).Create(&data).Error; err != nil {
 		return err
