@@ -33,6 +33,7 @@ func NewGormDB(dbMysql, parserMysql config.DbMysql, autoMigrate bool) (*DbDao, e
 			&tables.TableBlockParserInfo{},
 			&tables.TableAvatarNotes{},
 			&tables.TableCidInfo{},
+			&tables.TableCidPk{},
 		); err != nil {
 			return nil, err
 		}
