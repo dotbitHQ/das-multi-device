@@ -6,7 +6,12 @@ import (
 )
 
 func (d *DbDao) GetCidPk(cid1 string) (cidPk tables.TableCidPk, err error) {
+	//cid pk from ckb chain
 	err = d.parserDb.Where("`cid`= ? ", cid1).Find(&cidPk).Error
+	//Centralized cid pk
+	if cidPk.Id == 0 {
+		err = d.db.Where("`cid`= ? ", cid1).Find(&cidPk).Error
+	}
 	return
 }
 
