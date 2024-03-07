@@ -59,7 +59,8 @@ func (h *HttpHandle) doStoreCidPk(req *ReqStoreCidPk, apiResp *http_api.ApiResp)
 	signMsg := req.Msg
 	signature := req.Signature
 	address := signAddressHex.AddressHex
-	if address[:20] != hex.EncodeToString(common.CalculateCid1(req.Cid)) {
+	cid1 := common.CalculateCid1(req.Cid)
+	if address[:20] != hex.EncodeToString(cid1) {
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "cid err")
 		return nil
 	}
@@ -75,7 +76,7 @@ func (h *HttpHandle) doStoreCidPk(req *ReqStoreCidPk, apiResp *http_api.ApiResp)
 	var cidPk tables.TableCidPk
 	cidPk.OriginPk = sign.GetPkFromSignature(common.Hex2Bytes(signature))
 	cidPk.Pk = address[20:]
-	cidPk.Cid = req.Cid
+	cidPk.Cid = common.Bytes2Hex(cid1)
 	if err := h.dbDao.InsertCidPk(cidPk); err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeDbError, "InsertCidPk err")
 		return fmt.Errorf("InsertCidPk err: %s", err.Error())

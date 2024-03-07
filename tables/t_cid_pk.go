@@ -17,7 +17,7 @@ const (
 
 type TableCidPk struct {
 	Id              uint64            `json:"id" gorm:"column:id;primaryKey;type:bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT ''"`
-	Cid             string            `json:"cid" gorm:"column:cid; type:varchar(255) NOT NULL DEFAULT '0'"`
+	Cid             string            `json:"cid" gorm:"column:cid;uniqueIndex:uk_cid; type:varchar(255) NOT NULL DEFAULT '0'"`
 	Pk              string            `json:"pk" gorm:"column:pk; type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '';"`
 	OriginPk        string            `json:"origin_pk" gorm:"column:origin_pk; type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT ''"`
 	EnableAuthorize IsEnableAuthorize `json:"enable_authorize" gorm:"column:enable_authorize; type:tinyint NOT NULL DEFAULT '0'"`
