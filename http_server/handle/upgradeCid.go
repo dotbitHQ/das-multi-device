@@ -291,18 +291,22 @@ func (h *HttpHandle) getOldCid() (oldCids []OldCid, err error) {
 	oldCidPath := "./conf/old_cid.json"
 	file, err := ioutil.ReadFile(oldCidPath)
 	if err != nil {
-		log.Fatalf("Some error occured while reading file. Error: %s", err)
+		err = fmt.Errorf("old cid file not found")
+
 		return
 	}
 	err = json.Unmarshal(file, &oldCids)
 	if err != nil {
-		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
+		fmt.Errorf("old cid file content is error")
 		return
 	}
 	return
 }
 func (h *HttpHandle) updateOldCid(content string) (err error) {
 	oldCidPath := "./conf/old_cid.json"
-	err = ioutil.WriteFile(oldCidPath, []byte(content), 0644)
+	if err = ioutil.WriteFile(oldCidPath, []byte(content), 0644); err != nil {
+		return fmt.Errorf("write old cid file err")
+	}
+
 	return
 }
