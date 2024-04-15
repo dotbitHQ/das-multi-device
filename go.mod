@@ -3,7 +3,7 @@ module das-multi-device
 go 1.18
 
 require (
-	github.com/dotbitHQ/das-lib v1.1.1-0.20240318083745-93ecb3727783
+	github.com/dotbitHQ/das-lib v1.1.1-0.20240415102027-3345eb85b41f
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/gin-gonic/gin v1.9.1
