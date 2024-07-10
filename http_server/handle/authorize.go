@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"das-multi-device/cache"
 	"das-multi-device/config"
 	"das-multi-device/tables"
@@ -51,21 +52,21 @@ func (h *HttpHandle) Authorize(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doAuthorize(&req, &apiResp); err != nil {
-		log.Error("doAuthorize err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doAuthorize(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doAuthorize err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doAuthorize(ctx context.Context, req *ReqAuthorize, apiResp *http_api.ApiResp) (err error) {
 	var resp RespAuthorize
 	var keyListConfigCellOutPoint string
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
@@ -78,14 +79,14 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
-	log.Info("cid1: ", cid1)
+	log.Info(ctx, "cid1: ", cid1)
 	res, err := h.dbDao.GetCidPk(cid1)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeDbError, "search cidpk err")
 		return fmt.Errorf("SearchCidPk err: %s", err.Error())
 	}
 	keyListConfigCellOutPoint = res.Outpoint
-	log.Info("db outpoint: ", keyListConfigCellOutPoint)
+	log.Info(ctx, "db outpoint: ", keyListConfigCellOutPoint)
 	//if it is a newly created KeyListConfigCell, use it to buildWebauthnTx()
 	var keyListConfigCell *types.CellOutput
 	if res.Id == 0 || res.EnableAuthorize == tables.EnableAuthorizeOff {
@@ -110,7 +111,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 			return fmt.Errorf("createKeyListCfgCell err: %s", err.Error())
 		}
 	}
-	log.Info("outpoint: ", keyListConfigCellOutPoint)
+	log.Info(ctx, "outpoint: ", keyListConfigCellOutPoint)
 	//update keyListConfigCell (add das-lock-key)
 	slaveAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
@@ -133,12 +134,12 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 		Capacity:              0,
 	}
 
-	txParams, err := h.buildUpdateAuthorizeTx(&reqBuildWebauthnTx)
+	txParams, err := h.buildUpdateAuthorizeTx(ctx, &reqBuildWebauthnTx)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "build tx err")
 		return fmt.Errorf("buildAddAuthorizeTx err: %s", err.Error())
 	}
-	if si, err := h.buildWebauthnTx(&reqBuildWebauthnTx, txParams); err != nil {
+	if si, err := h.buildWebauthnTx(ctx, &reqBuildWebauthnTx, txParams); err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "buildWebauthnTx tx err")
 		return fmt.Errorf("buildWebauthnTx: %s", err.Error())
 	} else {
@@ -150,7 +151,7 @@ func (h *HttpHandle) doAuthorize(req *ReqAuthorize, apiResp *http_api.ApiResp) (
 
 }
 
-func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
+func (h *HttpHandle) buildUpdateAuthorizeTx(ctx context.Context, req *reqBuildWebauthnTx) (*txbuilder.BuildTransactionParams, error) {
 	var txParams txbuilder.BuildTransactionParams
 	contractDas, err := core.GetDasContractInfo(common.DasContractNameDispatchCellType)
 	if err != nil {
@@ -178,7 +179,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 		return nil, fmt.Errorf("GetTransaction err: %s", err.Error())
 	}
 	//capacity := res.Transaction.Outputs[keyListCfgOutPoint.Index].Capacity
-	log.Info("res.Transaction.Outputs: ", res.Transaction.Outputs)
+	log.Info(ctx, "res.Transaction.Outputs: ", res.Transaction.Outputs)
 	if len(res.Transaction.Outputs) == 0 {
 		return nil, fmt.Errorf("KeyListCfgTransaction not exists")
 	}
@@ -196,8 +197,8 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 
 	nowKeyList := witness.ConvertToWebauthnKeyList(builder.DeviceKeyListCellData.Keys())
 	var newKeyList []witness.WebauthnKey
-	log.Info("nowKeyList: ", nowKeyList)
-	log.Info("slaveKey: ", webAuthnKey)
+	log.Info(ctx, "nowKeyList: ", nowKeyList)
+	log.Info(ctx, "slaveKey: ", webAuthnKey)
 	//add webAuthnKey
 	if req.Operation == common.AddWebAuthnKey {
 		if len(nowKeyList) > 9 {
@@ -243,7 +244,7 @@ func (h *HttpHandle) buildUpdateAuthorizeTx(req *reqBuildWebauthnTx) (*txbuilder
 	return &txParams, nil
 }
 
-func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*SignInfo, error) {
+func (h *HttpHandle) buildWebauthnTx(ctx context.Context, req *reqBuildWebauthnTx, txParams *txbuilder.BuildTransactionParams) (*SignInfo, error) {
 	txBuilder := txbuilder.NewDasTxBuilderFromBase(h.txBuilderBase, nil)
 
 	//if it is a newly created KeyListConfigCell, use it in req
@@ -268,14 +269,14 @@ func (h *HttpHandle) buildWebauthnTx(req *reqBuildWebauthnTx, txParams *txbuilde
 		sizeInBlock, _ := txBuilder.Transaction.SizeInBlock()
 		changeCapacity := txBuilder.Transaction.Outputs[0].Capacity - sizeInBlock - 1000
 		txBuilder.Transaction.Outputs[0].Capacity = changeCapacity
-		log.Info("buildTx:", req.Action, sizeInBlock, changeCapacity)
+		log.Info(ctx, "buildTx:", req.Action, sizeInBlock, changeCapacity)
 	}
 	signList, err := txBuilder.GenerateDigestListFromTx(skipGroups)
 	if err != nil {
 		return nil, fmt.Errorf("txBuilder.GenerateDigestListFromTx err: %s", err.Error())
 	}
 
-	log.Info("buildTx:", txBuilder.TxString())
+	log.Info(ctx, "buildTx:", txBuilder.TxString())
 
 	sic.Action = req.Action
 	sic.ChainType = req.ChainType
@@ -527,22 +528,22 @@ func (h *HttpHandle) AuthorizeInfo(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doAuthorizeInfo(req, &apiResp); err != nil {
-		log.Error("doAuthorizeInfo err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doAuthorizeInfo(ctx.Request.Context(), req, &apiResp); err != nil {
+		log.Error("doAuthorizeInfo err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doAuthorizeInfo(ctx context.Context, req *ReqAuthorizeInfo, apiResp *http_api.ApiResp) (err error) {
 	var resp RespAuthorizeInfo
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
@@ -560,7 +561,7 @@ func (h *HttpHandle) doAuthorizeInfo(req *ReqAuthorizeInfo, apiResp *http_api.Ap
 	}
 	//resp.EnableAuthorize = int(res.EnableAuthorize)
 	authorizeList := make([]AuthorizeInfo, 0)
-	fmt.Println("res:: ", res)
+	fmt.Println(ctx, "res:: ", res)
 	if res.EnableAuthorize == tables.EnableAuthorizeOn {
 		if res.Outpoint == "" {
 			apiResp.ApiRespErr(http_api.ApiCodeError500, "outpoint is empty")
