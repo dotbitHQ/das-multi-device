@@ -23,6 +23,7 @@ func (h *HttpServer) initRouter() {
 	h.engine.Use(sentrygin.New(sentrygin.Options{
 		Repanic: true,
 	}))
+	h.engine.Use(http_api.ReqIdMiddleware())
 	v1 := h.engine.Group("v1")
 	{
 		//shortExpireTime, longExpireTime, lockTime := time.Second*5, time.Second*15, time.Minute
@@ -50,7 +51,6 @@ func (h *HttpServer) initRouter() {
 	}
 }
 
-// 11
 func respHandle(c *gin.Context, res string, err error) {
 	if err != nil {
 		log.Error("respHandle err:", err.Error())

@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"das-multi-device/tables"
 	"fmt"
 	"github.com/dotbitHQ/das-lib/common"
@@ -33,16 +34,16 @@ func (h *HttpHandle) AddCidInfo(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doAddCidInfo(&req, &apiResp); err != nil {
-		log.Error("doAddCidInfo err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doAddCidInfo(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doAddCidInfo err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doAddCidInfo(req *ReqAddCidInfo, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doAddCidInfo(ctx context.Context, req *ReqAddCidInfo, apiResp *http_api.ApiResp) (err error) {
 	masterAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 		ChainType:     common.ChainTypeWebauthn,
 		AddressNormal: req.CkbAddr,
@@ -53,7 +54,7 @@ func (h *HttpHandle) doAddCidInfo(req *ReqAddCidInfo, apiResp *http_api.ApiResp)
 	}
 	cid1 := common.Bytes2Hex(masterAddressHex.AddressPayload[:10])
 	//Check if cid is enabled keyListConfigCell
-	log.Info("cid1: ", cid1)
+	log.Info(ctx, "cid1: ", cid1)
 	if common.Bytes2Hex(common.CalculateCid1(req.Cid)) != cid1 {
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "ckb_addr or cid is error")
 		return

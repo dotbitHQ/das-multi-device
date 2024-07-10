@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/asn1"
@@ -39,22 +40,22 @@ func (h *HttpHandle) Ecrecover(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doEcrecover(req, &apiResp); err != nil {
-		log.Error("doEcrecover err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doEcrecover(ctx.Request.Context(), req, &apiResp); err != nil {
+		log.Error("doEcrecover err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doEcrecover(ctx context.Context, req *ReqEcrecover, apiResp *http_api.ApiResp) (err error) {
 	var resp RespEcrecover
 	signData := req.SignData
 	if len(signData) < 2 {
@@ -104,7 +105,7 @@ func (h *HttpHandle) doEcrecover(req *ReqEcrecover, apiResp *http_api.ApiResp) (
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("x: ", hex.EncodeToString(realPubkey.X.Bytes()), " ---- ", "y:", hex.EncodeToString(realPubkey.Y.Bytes()))
+	log.Info(ctx, "x: ", hex.EncodeToString(realPubkey.X.Bytes()), " ---- ", "y:", hex.EncodeToString(realPubkey.Y.Bytes()))
 
 	normalAddress, err := h.dasCore.Daf().HexToNormal(core.DasAddressHex{
 		DasAlgorithmId:    common.DasAlgorithmIdWebauthn,
@@ -140,22 +141,22 @@ func (h *HttpHandle) VerifyWebauthnSign(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doVerifyWebauthnSign(req, &apiResp); err != nil {
-		log.Error("doVerifyWebauthnSign err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doVerifyWebauthnSign(ctx.Request.Context(), req, &apiResp); err != nil {
+		log.Error("doVerifyWebauthnSign err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doVerifyWebauthnSign(ctx context.Context, req *ReqVerify, apiResp *http_api.ApiResp) (err error) {
 	var resp RepVerify
 	signType := common.DasAlgorithmIdWebauthn
 	backupAddressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
@@ -176,7 +177,7 @@ func (h *HttpHandle) doVerifyWebauthnSign(req *ReqVerify, apiResp *http_api.ApiR
 			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "sign address NormalToHex err")
 			return err
 		}
-		log.Info("-----", masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
+		log.Info(ctx, masterAddressHex.AddressHex, "--", backupAddressHex.AddressHex)
 		idx, err = h.dasCore.GetIdxOfKeylist(masterAddressHex, backupAddressHex)
 		if err != nil {
 			apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "GetIdxOfKeylist err")

@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/hex"
@@ -47,22 +48,22 @@ func (h *HttpHandle) GetMasters(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doGetMasters(req, &apiResp); err != nil {
-		log.Error("doGetMasters err:", err.Error(), funcName, clientIp)
+	if err = h.doGetMasters(ctx.Request.Context(), req, &apiResp); err != nil {
+		log.Error("doGetMasters err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doGetMasters(req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doGetMasters(ctx context.Context, req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
 	var resp RespGetMasters
 	cid := req.Cid
 	cid1 := common.CalculateCid1(cid)
@@ -102,22 +103,22 @@ func (h *HttpHandle) GetOriginalPk(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
 
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doGetOriginalPk(req, &apiResp); err != nil {
-		log.Error("doGetoriginalPk err:", err.Error(), funcName, clientIp)
+	if err = h.doGetOriginalPk(ctx.Request.Context(), req, &apiResp); err != nil {
+		log.Error("doGetoriginalPk err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doGetOriginalPk(req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doGetOriginalPk(ctx context.Context, req *ReqGetMasters, apiResp *http_api.ApiResp) (err error) {
 	var resp RespGetOringinPk
 	cid := req.Cid
 	cid1 := common.CalculateCid1(cid)

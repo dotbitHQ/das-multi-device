@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/hex"
@@ -38,26 +39,26 @@ func (h *HttpHandle) CidInfo(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doCidInfo(&req, &apiResp); err != nil {
-		log.Error("doCidInfo err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doCidInfo(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doCidInfo err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doCidInfo(req *ReqCidInfo, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doCidInfo(ctx context.Context, req *ReqCidInfo, apiResp *http_api.ApiResp) (err error) {
 	var resp RepCidInfo
 	cid := req.Cid
 
 	var oldCids []OldCid
-	oldCids, err = h.getOldCid()
+	oldCids, err = h.getOldCid(ctx)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return err
@@ -114,20 +115,20 @@ func (h *HttpHandle) QueryCid(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doQueryCid(&req, &apiResp); err != nil {
-		log.Error("doCidInfo err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doQueryCid(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doCidInfo err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
-func (h *HttpHandle) doQueryCid(req *ReqQueryCid, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doQueryCid(ctx context.Context, req *ReqQueryCid, apiResp *http_api.ApiResp) (err error) {
 	var resp RepQueryCid
 	account := req.Account
 	acc, err := h.dbDao.GetAccountInfoByAccount(account)
@@ -141,7 +142,7 @@ func (h *HttpHandle) doQueryCid(req *ReqQueryCid, apiResp *http_api.ApiResp) (er
 	}
 	var oldCids []OldCid
 
-	oldCids, err = h.getOldCid()
+	oldCids, err = h.getOldCid(ctx)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return err
@@ -155,7 +156,7 @@ func (h *HttpHandle) doQueryCid(req *ReqQueryCid, apiResp *http_api.ApiResp) (er
 	return nil
 }
 
-//add test cid into config
+// add test cid into config
 type ReqAddTestCid struct {
 	Cid string `json:"cid" binding:"required"`
 }
@@ -177,7 +178,7 @@ func (h *HttpHandle) AddTestCid(ctx *gin.Context) {
 	}
 	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
 
-	if err = h.doAddTestCid(&req, &apiResp); err != nil {
+	if err = h.doAddTestCid(ctx, &req, &apiResp); err != nil {
 		log.Error("doCidInfo err:", err.Error(), funcName, clientIp, ctx)
 	}
 
@@ -191,10 +192,10 @@ type OldCid struct {
 	IsTest  bool   `json:"is_test""`
 }
 
-func (h *HttpHandle) doAddTestCid(req *ReqAddTestCid, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doAddTestCid(ctx context.Context, req *ReqAddTestCid, apiResp *http_api.ApiResp) (err error) {
 	var oldCids []OldCid
 
-	oldCids, err = h.getOldCid()
+	oldCids, err = h.getOldCid(ctx)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid err")
 		return
@@ -241,23 +242,23 @@ func (h *HttpHandle) CoverCid(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doCoverCid(&req, &apiResp); err != nil {
-		log.Error("doCoverCid err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doCoverCid(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doCoverCid err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doCoverCid(req *ReqCoverCid, apiResp *http_api.ApiResp) (err error) {
+func (h *HttpHandle) doCoverCid(ctx context.Context, req *ReqCoverCid, apiResp *http_api.ApiResp) (err error) {
 	var oldCids []OldCid
-	oldCids, err = h.getOldCid()
+	oldCids, err = h.getOldCid(ctx)
 	if err != nil {
 		apiResp.ApiRespErr(http_api.ApiCodeError500, "getOldCid")
 		return
@@ -287,16 +288,16 @@ func (h *HttpHandle) doCoverCid(req *ReqCoverCid, apiResp *http_api.ApiResp) (er
 	return
 }
 
-func (h *HttpHandle) getOldCid() (oldCids []OldCid, err error) {
+func (h *HttpHandle) getOldCid(ctx context.Context) (oldCids []OldCid, err error) {
 	oldCidPath := "./conf/old_cid.json"
 	file, err := ioutil.ReadFile(oldCidPath)
 	if err != nil {
-		log.Fatalf("Some error occured while reading file. Error: %s", err)
+		log.Fatalf("Some error occured while reading file. Error: %s", err, ctx)
 		return
 	}
 	err = json.Unmarshal(file, &oldCids)
 	if err != nil {
-		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
+		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error(), ctx)
 		return
 	}
 	return

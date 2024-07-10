@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"das-multi-device/tables"
 	"encoding/json"
 	"fmt"
@@ -43,7 +44,7 @@ func (h *HttpHandle) RpcTransactionSend(p json.RawMessage, apiResp *http_api.Api
 		return
 	}
 
-	if err = h.doTransactionSend(&req[0], apiResp); err != nil {
+	if err = h.doTransactionSend(h.ctx, &req[0], apiResp); err != nil {
 		log.Error("doVersion err:", err.Error())
 	}
 }
@@ -58,21 +59,21 @@ func (h *HttpHandle) TransactionSend(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doTransactionSend(&req, &apiResp); err != nil {
-		log.Error("doTransactionSend err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doTransactionSend(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doTransactionSend err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
 }
 
-func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_api.ApiResp) error {
+func (h *HttpHandle) doTransactionSend(ctx context.Context, req *ReqTransactionSend, apiResp *http_api.ApiResp) error {
 	var resp RespTransactionSend
 
 	var sic SignInfoCache
@@ -117,7 +118,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 			apiResp.ApiRespErr(http_api.ApiCodePermissionDenied, "permission denied")
 			return fmt.Errorf("permission denied")
 		}
-		log.Info("signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
+		log.Info(ctx, "signAddr loginAddr: ", signAddressHex.AddressHex, sic.Address)
 		for i, v := range req.SignList {
 			if v.SignType != common.DasAlgorithmIdWebauthn {
 				continue
@@ -164,7 +165,7 @@ func (h *HttpHandle) doTransactionSend(req *ReqTransactionSend, apiResp *http_ap
 				BlockTimestamp: uint64(time.Now().UnixNano() / 1e6),
 			}
 			if err = h.dbDao.CreatePending(&pending); err != nil {
-				log.Error("CreatePending err: ", err.Error(), toolib.JsonString(pending))
+				log.Error(ctx, "CreatePending err: ", err.Error(), toolib.JsonString(pending))
 			}
 
 		}
@@ -184,15 +185,15 @@ func (h *HttpHandle) TransactionStatus(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx)
+		log.Error("ShouldBindJSON err: ", err.Error(), funcName, clientIp, ctx.Request.Context())
 		apiResp.ApiRespErr(http_api.ApiCodeParamsInvalid, "params invalid")
 		ctx.JSON(http.StatusOK, apiResp)
 		return
 	}
-	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx)
+	log.Info("ApiReq:", funcName, clientIp, toolib.JsonString(req), ctx.Request.Context())
 
-	if err = h.doTransactionStatus(&req, &apiResp); err != nil {
-		log.Error("doTransactionStatus err:", err.Error(), funcName, clientIp, ctx)
+	if err = h.doTransactionStatus(ctx.Request.Context(), &req, &apiResp); err != nil {
+		log.Error("doTransactionStatus err:", err.Error(), funcName, clientIp, ctx.Request.Context())
 	}
 
 	ctx.JSON(http.StatusOK, apiResp)
@@ -205,7 +206,7 @@ type RespTransactionStatus struct {
 	Status      int             `json:"status"`
 }
 
-func (h *HttpHandle) doTransactionStatus(req *ReqTransactionStatus, apiResp *http_api.ApiResp) error {
+func (h *HttpHandle) doTransactionStatus(ctx context.Context, req *ReqTransactionStatus, apiResp *http_api.ApiResp) error {
 	//addressHex, err := h.dasCore.Daf().NormalToHex(core.DasAddressNormal{
 	//	ChainType:     req.ChainType,
 	//	AddressNormal: req.Address,
