@@ -45,6 +45,11 @@ func main() {
 				Aliases: []string{"c"},
 				Usage:   "Load configuration from `FILE`",
 			},
+			&cli.StringFlag{
+				Name:    "mode",
+				Aliases: []string{"m"},
+				Usage:   "Server Type, ``(default): api and timer server, `api`: api server, `timer`: timer server",
+			},
 		},
 		Action: runServer,
 	}
@@ -106,39 +111,26 @@ func runServer(ctx *cli.Context) error {
 		return fmt.Errorf("initTxBuilder err: %s", err.Error())
 	}
 
-	// block parser
-	bp := block_parser.BlockParser{
-		DasCore:            dasCore,
-		CurrentBlockNumber: config.Cfg.Chain.CurrentBlockNumber,
-		DbDao:              dbDao,
-		ConcurrencyNum:     config.Cfg.Chain.ConcurrencyNum,
-		ConfirmNum:         config.Cfg.Chain.ConfirmNum,
-		Ctx:                ctxServer,
-		Cancel:             cancel,
-		Wg:                 &wgServer,
-	}
-	if err := bp.Run(); err != nil {
-		return fmt.Errorf("block parser err: %s", err.Error())
-	}
-	log.Debug("block parser ok")
+	//service mode
+	mode := ctx.String("mode")
 
-	// http
-	hs, err := http_server.Initialize(http_server.HttpServerParams{
-		Address:         config.Cfg.Server.HttpServerAddr,
-		InternalAddress: config.Cfg.Server.HttpServerInternalAddr,
-		DbDao:           dbDao,
-		Rc:              rc,
-		Ctx:             ctxServer,
-		DasCore:         dasCore,
-		DasCache:        dasCache,
-		TxBuilderBase:   txBuilderBase,
-		ServerScript:    serverScript,
-	})
-	if err != nil {
-		return fmt.Errorf("http server Initialize err:%s", err.Error())
+	if mode == "api" {
+		if err := initApiServer(txBuilderBase, serverScript, dasCore, dasCache, dbDao, rc); err != nil {
+			return fmt.Errorf("initApiServer err : %s", err.Error())
+		}
+	} else if mode == "timer" {
+		if err := initTimer(dasCore, dbDao); err != nil {
+			return fmt.Errorf("initTimer err : %s", err.Error())
+		}
+	} else {
+		if err := initTimer(dasCore, dbDao); err != nil {
+			return fmt.Errorf("initTimer err : %s", err.Error())
+		}
+		if err := initApiServer(txBuilderBase, serverScript, dasCore, dasCache, dbDao, rc); err != nil {
+			return fmt.Errorf("initApiServer err : %s", err.Error())
+		}
 	}
-	hs.Run()
-	log.Debug("httpserver ok")
+
 	// ============= service end =============
 	toolib.ExitMonitoring(func(sig os.Signal) {
 		log.Warn("ExitMonitoring:", sig.String())
@@ -226,4 +218,45 @@ func initTxBuilder(dasCore *core.DasCore) (*txbuilder.DasTxBuilderBase, *types.S
 	log.Info("tx builder ok")
 
 	return txBuilderBase, serverScript, nil
+}
+
+func initTimer(dasCore *core.DasCore, dbDao *dao.DbDao) error {
+
+	// block parser
+	bp := block_parser.BlockParser{
+		DasCore:            dasCore,
+		CurrentBlockNumber: config.Cfg.Chain.CurrentBlockNumber,
+		DbDao:              dbDao,
+		ConcurrencyNum:     config.Cfg.Chain.ConcurrencyNum,
+		ConfirmNum:         config.Cfg.Chain.ConfirmNum,
+		Ctx:                ctxServer,
+		Cancel:             cancel,
+		Wg:                 &wgServer,
+	}
+	if err := bp.Run(); err != nil {
+		return fmt.Errorf("block parser err: %s", err.Error())
+	}
+	log.Debug("block parser ok")
+	return nil
+}
+
+func initApiServer(txBuilderBase *txbuilder.DasTxBuilderBase, serverScript *types.Script, dasCore *core.DasCore, dasCache *dascache.DasCache, dbDao *dao.DbDao, rc *cache.RedisCache) error {
+	// http
+	hs, err := http_server.Initialize(http_server.HttpServerParams{
+		Address:         config.Cfg.Server.HttpServerAddr,
+		InternalAddress: config.Cfg.Server.HttpServerInternalAddr,
+		DbDao:           dbDao,
+		Rc:              rc,
+		Ctx:             ctxServer,
+		DasCore:         dasCore,
+		DasCache:        dasCache,
+		TxBuilderBase:   txBuilderBase,
+		ServerScript:    serverScript,
+	})
+	if err != nil {
+		return fmt.Errorf("http server Initialize err:%s", err.Error())
+	}
+	hs.Run()
+	log.Debug("httpserver ok")
+	return nil
 }
