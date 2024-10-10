@@ -48,6 +48,9 @@ func (h *HttpServer) initRouter() {
 		v1.POST("/webauthn/verify", api_code.DoMonitorLog("cid-info"), h.h.VerifyWebauthnSign)
 		v1.StaticFS("/webrtc/chatroom", http.FS(webrtc.WebRTC))
 		v1.GET("/webrtc/socket", h.h.WebRTCWebSocket)
+		v1.GET("/test/jenkins", func(c *gin.Context) {
+			c.JSON(200, "main--v1.0.0")
+		})
 	}
 }
 
